@@ -1,6 +1,7 @@
 from zeus_apple_silicon import AppleEnergyMonitor
+from measure.abstractEnergyProfiler import AbstractEnergyProfiler
 
-class EnergyProfiler:
+class EnergyProfiler(AbstractEnergyProfiler):
     '''
     Energy Profiler for Apple Silicon, using the AppleEnergyMonitor from the zeus_apple_silicon library.
 

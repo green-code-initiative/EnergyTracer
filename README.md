@@ -1,5 +1,5 @@
-macEnergyTracer
-===============
+EnergyTracer
+============
 
 *A tool to measure the energy consumption of a MacOS computer per code iteration, comparing two variants of the same code.*
 
@@ -24,9 +24,10 @@ uv run src/main.py
 This will execute the `main.py` script, which will measure the energy consumption of the default code variants and plot the results. To customize the code variants and metrics, you can use command-line arguments as follows:
 
 1. `--help` or `-h`: Show the help message and exit.
-2. `--iterations ITERATIONS`: Set the number of iterations for the code under measurement (default is 100_000).
-3. `--src-file-1 SRC_FILE_1`: Path to the source file with the code smell to measure (default is `src/python/file_with_code_smell.py`).
-4. `--src-file-2 SRC_FILE_2`: Path to the source file without the code smell to measure (default is `src/python/file_without_code_smell.py`).
+2. `--profiler`: Choose the energy profiler to use. Options are `carbon` for CodeCarbon and `mac-silicon` for zeus_apple_silicon. Default is `carbon`.
+3. `--iter`: Specify the number of iterations for the code under measurement. Default is 1000.
+4. `--src-file-1`: Path to the source file with the code smell to measure. Default is `src/python/file_with_code_smell.py`.
+5. `--src-file-2`: Path to the source file without the code smell to measure. Default is `src/python/file_without_code_smell.py`.
 
 > Further improvements could include other measurement libraries, with other metrics.
 
