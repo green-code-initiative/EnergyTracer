@@ -71,6 +71,7 @@ def plot_all_metrics(df: pd.DataFrame, filename: str):
     plt.xlabel("Iteration")
     plt.ylabel("Energy (mJ)")
     plt.title("Energy Consumption Comparison")
+    plt.legend(fontsize="small")
     plt.grid(True)
     plt.savefig(filename, dpi=300)
     plt.close()
