@@ -4,6 +4,7 @@ import sys
 
 from alive_progress import alive_bar
 
+from .analysis.statistical_analysis import analyse_histories
 from .measure.carbon_energy_profiler import EnergyProfiler as carbonEnergyProfiler
 from .plot.generate_plots import compare_histories
 from .utilities.parser import parse_arguments
@@ -43,16 +44,8 @@ def run_profiling(energy_profiler_cls, src_file, label, n_iter, verbose=False):
     return monitor.history
 
 
-def main(args, energy_profiler_cls):
-    if args.verbose:
-        msg = "Starting energy profiler"
-        print(msg)
-        print("-" * len(msg))
-        print(f"Energy profiler: {args.profiler}")
-        print(f"Number of iterations: {args.iter}")
-        print(f"Source file with code smell: {args.src_file_1}")
-        print(f"Source file without code smell: {args.src_file_2}\n")
-
+def collect_measurements(args, energy_profiler_cls):
+    """Run profiling on both source files (with optional shuffle) and return ordered histories."""
     runs = [
         (args.src_file_1, LABEL_WITH_SMELL),
         (args.src_file_2, LABEL_WITHOUT_SMELL),
@@ -94,23 +87,82 @@ def main(args, energy_profiler_cls):
         print("\nEnergy profiling completed!")
 
     if swapped:
-        history_with_smell = second_result
-        history_without_smell = first_result
-    else:
-        history_with_smell = first_result
-        history_without_smell = second_result
+        return second_result, first_result
+    return first_result, second_result
 
-    output_directory = Path("output") / args.profiler / args.output_dir
 
-    save_history(history_with_smell, CSV_WITH_SMELL, directory=output_directory)
-    save_history(history_without_smell, CSV_WITHOUT_SMELL, directory=output_directory)
-
+def save_raw(history_with_smell, history_without_smell, profiler, directory):
+    """Save raw measurement histories and generate plots."""
+    save_history(history_with_smell, CSV_WITH_SMELL, directory=directory)
+    save_history(history_without_smell, CSV_WITHOUT_SMELL, directory=directory)
     compare_histories(
         history_with_smell,
         history_without_smell,
-        profiler=args.profiler,
-        directory=output_directory,
+        profiler=profiler,
+        directory=directory,
     )
+
+
+def save_cleaned(
+    history_with_smell, history_without_smell, profiler, directory, verbose
+):
+    """Remove outliers, save cleaned histories and regenerate plots. Returns the analysis dict."""
+    analysis = analyse_histories(history_with_smell, history_without_smell)
+
+    if verbose:
+        print(
+            f"Outliers removed — A: {analysis['outliers_removed']['a']}, "
+            f"B: {analysis['outliers_removed']['b']}"
+        )
+
+    save_history(analysis["cleaned_a"], CSV_WITH_SMELL, directory=directory)
+    save_history(analysis["cleaned_b"], CSV_WITHOUT_SMELL, directory=directory)
+    compare_histories(
+        analysis["cleaned_a"],
+        analysis["cleaned_b"],
+        profiler=profiler,
+        directory=directory,
+    )
+
+    return analysis
+
+
+def main(args, energy_profiler_cls):
+    if args.verbose:
+        msg = "Starting energy profiler"
+        print(msg)
+        print("-" * len(msg))
+        print(f"Energy profiler: {args.profiler}")
+        print(f"Number of iterations: {args.iter}")
+        print(f"Source file with code smell: {args.src_file_1}")
+        print(f"Source file without code smell: {args.src_file_2}\n")
+
+    history_with_smell, history_without_smell = collect_measurements(
+        args, energy_profiler_cls
+    )
+
+    output_directory = Path("output") / args.profiler / args.output_dir
+
+    save_raw(
+        history_with_smell,
+        history_without_smell,
+        profiler=args.profiler,
+        directory=output_directory / "raw",
+    )
+
+    if args.verbose:
+        print("\nRaw data saved. Running statistical analysis…")
+
+    save_cleaned(
+        history_with_smell,
+        history_without_smell,
+        profiler=args.profiler,
+        directory=output_directory / "cleaned",
+        verbose=args.verbose,
+    )
+
+    if args.verbose:
+        print("Cleaned data and plots saved.")
 
 
 def cli():

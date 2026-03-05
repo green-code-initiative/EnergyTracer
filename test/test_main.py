@@ -135,11 +135,13 @@ def test_cli_with_carbon_profiler_on_non_darwin(mock_parse, monkeypatch, platfor
 @pytest.mark.parametrize(
     "shuffle, verbose", [(False, False), (False, True), (True, False), (True, True)]
 )
+@patch("src.main.analyse_histories")
 @patch("src.main.save_history")
 @patch("src.main.compare_histories")
 def test_main_with_valid_arguments(
     mock_compare_histories,
     mock_save_history,
+    mock_analyse_histories,
     mock_profiler_cls,
     src_file_1,
     src_file_2,
@@ -150,6 +152,15 @@ def test_main_with_valid_arguments(
     from src.main import main
 
     mock_cls, mock_profiler = mock_profiler_cls
+
+    mock_analyse_histories.return_value = {
+        "raw_sizes": {"a": 2, "b": 2},
+        "cleaned_sizes": {"a": 2, "b": 2},
+        "outliers_removed": {"a": 0, "b": 0},
+        "cleaned_a": [{"i": 0, "cpu_mj": 1, "gpu_mj": 1, "ane_mj": 1, "dram_mj": 1}],
+        "cleaned_b": [{"i": 0, "cpu_mj": 1, "gpu_mj": 1, "ane_mj": 1, "dram_mj": 1}],
+        "metrics": {},
+    }
 
     mock_args = MagicMock(
         profiler=profiler,
@@ -163,12 +174,10 @@ def test_main_with_valid_arguments(
 
     main(mock_args, mock_cls)
 
-    # Check that the profiler was run twice (for both files)
-    assert mock_profiler.measure_once.call_count == 4  # 2 iterations * 2 files
+    assert mock_profiler.measure_once.call_count == 4
     assert mock_profiler.finalize.call_count == 2
 
-    # Check that save_history was called for both histories
-    assert mock_save_history.call_count == 2
+    assert mock_save_history.call_count == 4
+    assert mock_compare_histories.call_count == 2
 
-    # Check that compare_histories was called once
-    assert mock_compare_histories.call_count == 1
+    mock_analyse_histories.assert_called_once()

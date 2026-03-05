@@ -26,6 +26,7 @@
   - [Mac Silicon (Zeus)](#mac-silicon-zeus)
   - [CodeCarbon](#codecarbon)
 - [Automated Measurement Script](#automated-measurement-script)
+- [Experiment Guide](#experiment-guide)
 - [Acknowledgements](#acknowledgements)
 - [License](#license)
 
@@ -203,9 +204,21 @@ The script performs the following steps:
 
 To further reduce temporal bias, the execution order of code variants is randomized in each iteration using the `--shuffle` flag. The script also provides a terminal progress bar to indicate the current phase and iteration.
 
-> **Important note on reproducibility**: The results of energy measurements can be affected by various factors such as background processes, thermal conditions, and network activity. To ensure reproducible measurements, it is recommended to set up your system in a consistent state beforehand. For more details, refer to this [guide](https://luiscruz.github.io/2021/10/10/scientific-guide.html) on best practices for reproducible energy measurements.
->
-> It is advisable to avoid using the system for any other tasks while the script runs, to minimize interference with the measurements.
+> **Important note on reproducibility**: The results of energy measurements can be affected by various factors such as background processes, thermal conditions, and network activity. To ensure reproducible measurements, it is recommended to set up your system in a consistent state beforehand. See the [Experiment Guide](#experiment-guide) below for a complete checklist.
+
+
+## Experiment Guide
+
+Running reliable energy experiments requires a **controlled environment**. The full protocol — from machine preparation to statistical validation of results — is described in the dedicated [Experiment Guide](EXPERIMENT_GUIDE.md).
+
+Here is a quick summary of the key steps:
+
+1. **Prepare the environment** — close all non-essential apps, disconnect peripherals, plug in the charger, lock display/power settings, and ensure stable room temperature.
+2. **Run the automated script** — `./run_experiment.sh` (or `.\run_experiment.bat`) handles warm-up, 30 measurement runs with cooldowns, and shuffled execution order.
+3. **Do not interact** with the machine while the experiment is running.
+4. **Analyze the results** — inspect the generated plots and CSV files; look for consistent differences, low variance, and check for outliers.
+
+For a printable checklist and detailed explanations of each step, refer to the [full guide](EXPERIMENT_GUIDE.md).
 
 
 ## Acknowledgements
