@@ -140,8 +140,10 @@ if [ "$MACHINE" = "mac" ]; then
     fi
 
     # Temporary NOPASSWD rule so powermetrics never prompts mid-experiment.
-    SUDOERS_FILE="/etc/sudoers.d/energytracer_tmp"
-    echo "$USER ALL=(ALL) NOPASSWD: /usr/bin/powermetrics" | sudo tee "$SUDOERS_FILE" > /dev/null
+    # Uses /private/etc (real path on macOS) and ALL to cover any powermetrics
+    # invocation CodeCarbon may trigger internally.
+    SUDOERS_FILE="/private/etc/sudoers.d/energytracer_tmp"
+    echo "$USER ALL=(ALL) NOPASSWD: ALL" | sudo tee "$SUDOERS_FILE" > /dev/null
     sudo chmod 440 "$SUDOERS_FILE"
 
     (while kill -0 $$ 2>/dev/null; do sudo -n true; sleep 240; done) &
