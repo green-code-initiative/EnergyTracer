@@ -128,6 +128,15 @@ end_phase() {
 
 # ── Banner ───────────────────────────────────────────────
 
+# ── Sudo keep-alive ──────────────────────────────────────
+# Ask for sudo upfront and refresh the timestamp every 240 s
+# in the background so it never expires during the experiment.
+
+sudo -v || { error "sudo is required for powermetrics."; exit 1; }
+(while kill -0 $$ 2>/dev/null; do sudo -n true; sleep 240; done) &
+SUDO_KEEPALIVE_PID=$!
+trap 'kill $SUDO_KEEPALIVE_PID 2>/dev/null' EXIT
+
 GLOBAL_START=$(date +%s)
 
 echo ""
