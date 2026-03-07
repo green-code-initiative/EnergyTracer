@@ -165,6 +165,13 @@ printf "  ${BOLD}Cooldown${RST}     %ds between measurements\n" "$COOLDOWN"
 echo ""
 warn "Do not interrupt — results may be incomplete."
 
+# On macOS, caffeinate -i prevents the system from idle-sleeping.
+if [ "$MACHINE" = "mac" ]; then
+    RUN="caffeinate -i"
+else
+    RUN=""
+fi
+
 # ── Phase 1/2: Warm-up ──────────────────────────────────
 
 echo ""
@@ -175,10 +182,10 @@ W_TOTAL=$((WARMUP_RUNS * 2))
 T0=$(date +%s)
 
 for i in $(seq 1 $WARMUP_RUNS); do
-    uv run ET -p carbon -n "$WARMUP_N" -o "warmup-$i" --shuffle >/dev/null 2>&1
+    $RUN uv run ET -p carbon -n "$WARMUP_N" -o "warmup-$i" --shuffle >/dev/null 2>&1
     show_progress $((i * 2 - 1)) "$W_TOTAL" "$T0"
 
-    uv run ET -p "$ARCH_PROFILER" -n "$WARMUP_N" -o "warmup-$i" --shuffle >/dev/null 2>&1
+    $RUN uv run ET -p "$ARCH_PROFILER" -n "$WARMUP_N" -o "warmup-$i" --shuffle >/dev/null 2>&1
     show_progress $((i * 2)) "$W_TOTAL" "$T0"
 done
 
@@ -199,11 +206,11 @@ T0=$(date +%s)
 
 for i in $(seq 1 $MEASURE_RUNS); do
     sleep "$COOLDOWN"
-    uv run ET -p carbon -n "$MEASURE_N" -o "measure-$i" --shuffle >/dev/null 2>&1
+    $RUN uv run ET -p carbon -n "$MEASURE_N" -o "measure-$i" --shuffle >/dev/null 2>&1
     show_progress $((i * 2 - 1)) "$M_TOTAL" "$T0"
 
     sleep "$COOLDOWN"
-    uv run ET -p "$ARCH_PROFILER" -n "$MEASURE_N" -o "measure-$i" --shuffle >/dev/null 2>&1
+    $RUN uv run ET -p "$ARCH_PROFILER" -n "$MEASURE_N" -o "measure-$i" --shuffle >/dev/null 2>&1
     show_progress $((i * 2)) "$M_TOTAL" "$T0"
 done
 
