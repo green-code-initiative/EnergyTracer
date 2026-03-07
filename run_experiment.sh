@@ -129,10 +129,19 @@ end_phase() {
 # ── Banner ───────────────────────────────────────────────
 
 # ── Sudo keep-alive ──────────────────────────────────────
-# Ask for sudo upfront and refresh the timestamp every 240 s
-# in the background so it never expires during the experiment.
+# Initialise sudo: if the cache is already valid (e.g. caller ran
+# `sudo -v` manually beforehand) this is a no-op; otherwise it
+# prompts once interactively. After that, a background loop refreshes
+# the timestamp every 240 s so it never expires mid-experiment.
 
-sudo -v || { error "sudo is required for powermetrics."; exit 1; }
+if ! sudo -n true 2>/dev/null; then
+    if ! tty -s; then
+        error "sudo credentials not cached and no TTY available."
+        error "Run ${BOLD}sudo -v${RST} before detaching tmux."
+        exit 1
+    fi
+    sudo -v || { error "sudo is required for powermetrics."; exit 1; }
+fi
 (while kill -0 $$ 2>/dev/null; do sudo -n true; sleep 240; done) &
 SUDO_KEEPALIVE_PID=$!
 trap 'kill $SUDO_KEEPALIVE_PID 2>/dev/null' EXIT
