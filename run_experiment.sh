@@ -128,23 +128,26 @@ end_phase() {
 
 # ── Banner ───────────────────────────────────────────────
 
-# ── Sudo keep-alive ──────────────────────────────────────
-# Initialise sudo: if the cache is already valid (e.g. caller ran
-# `sudo -v` manually beforehand) this is a no-op; otherwise it
-# prompts once interactively. After that, a background loop refreshes
-# the timestamp every 240 s so it never expires mid-experiment.
-
-if ! sudo -n true 2>/dev/null; then
-    if ! tty -s; then
-        error "sudo credentials not cached and no TTY available."
-        error "Run ${BOLD}sudo -v${RST} before detaching tmux."
-        exit 1
+# ── Sudo (mac only: powermetrics requires root) ──────────
+if [ "$MACHINE" = "mac" ]; then
+    if ! sudo -n true 2>/dev/null; then
+        if ! tty -s; then
+            error "sudo credentials not cached and no TTY available."
+            error "Run ${BOLD}sudo -v${RST} before detaching tmux."
+            exit 1
+        fi
+        sudo -v || { error "sudo is required for powermetrics."; exit 1; }
     fi
-    sudo -v || { error "sudo is required for powermetrics."; exit 1; }
+
+    # Temporary NOPASSWD rule so powermetrics never prompts mid-experiment.
+    SUDOERS_FILE="/etc/sudoers.d/energytracer_tmp"
+    echo "$USER ALL=(ALL) NOPASSWD: /usr/bin/powermetrics" | sudo tee "$SUDOERS_FILE" > /dev/null
+    sudo chmod 440 "$SUDOERS_FILE"
+
+    (while kill -0 $$ 2>/dev/null; do sudo -n true; sleep 240; done) &
+    SUDO_KEEPALIVE_PID=$!
+    trap 'sudo rm -f "$SUDOERS_FILE"; kill $SUDO_KEEPALIVE_PID 2>/dev/null' EXIT
 fi
-(while kill -0 $$ 2>/dev/null; do sudo -n true; sleep 240; done) &
-SUDO_KEEPALIVE_PID=$!
-trap 'kill $SUDO_KEEPALIVE_PID 2>/dev/null' EXIT
 
 GLOBAL_START=$(date +%s)
 
