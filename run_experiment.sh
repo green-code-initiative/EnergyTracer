@@ -47,7 +47,7 @@ usage() {
 # architecture-specific profiler selected here.
 #
 # To add a new machine:
-#   1. Add a line:   <name>)  ARCH_PROFILER="<profiler-id>" ;;
+#   1. Add a line:   <n>)  ARCH_PROFILER="<profiler-id>" ;;
 #      where <profiler-id> matches a --profiler value accepted by ET
 #      (see src/utilities/parser.py for the list of choices).
 #   2. Uncomment / add the entry in usage() above.
@@ -73,6 +73,26 @@ MEASURE_N=1000          # Code iterations per measurement run
 COOLDOWN=60             # Sleep duration (seconds) between measurements
 
 OUTPUT_DIR="output"
+
+# ── SSH detection & setup ─────────────────────────────────
+# $SSH_CLIENT / $SSH_TTY / $SSH_CONNECTION are set by sshd and
+# inherited by tmux child processes — they survive detach/reattach.
+# When detected, we source lib/ssh_setup.sh which handles:
+#   - sudo persistence (NOPASSWD sudoers rule for powermetrics)
+#   - caffeinate (prevents both idle sleep and background CPU throttling)
+# See lib/ssh_setup.sh for the full rationale.
+
+IS_SSH=0
+if [ -n "$SSH_CLIENT" ] || [ -n "$SSH_TTY" ] || [ -n "$SSH_CONNECTION" ]; then
+    IS_SSH=1
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+if [ "$IS_SSH" = "1" ] && [ "$MACHINE" = "mac" ]; then
+    # shellcheck source=lib/ssh_setup.sh
+    . "$SCRIPT_DIR/lib/ssh_setup.sh" || exit 1
+fi
 
 # ── Helpers ──────────────────────────────────────────────
 
@@ -100,17 +120,12 @@ show_progress() {
     _pct=$((_cur * 100 / _tot))
     _filled=$((_cur * BAR_WIDTH / _tot))
     _empty=$((BAR_WIDTH - _filled))
-    _bar=""; _j=0
-    while [ "$_j" -lt "$_filled" ]; do _bar="${_bar}█"; _j=$((_j + 1)); done
-    _j=0
-    while [ "$_j" -lt "$_empty" ]; do _bar="${_bar}░"; _j=$((_j + 1)); done
     if [ "$_cur" -gt 0 ]; then
         fmt $(( _el * (_tot - _cur) / _cur )); _eta="$_FMT"
     else
         _eta="--"
     fi
     fmt "$_el"; _el_str="$_FMT"
-    # Color the bar green for filled, dim for empty.
     _bar_f=""; _bar_e=""; _j=0
     while [ "$_j" -lt "$_filled" ]; do _bar_f="${_bar_f}█"; _j=$((_j + 1)); done
     _j=0
@@ -128,29 +143,6 @@ end_phase() {
 
 # ── Banner ───────────────────────────────────────────────
 
-# ── Sudo (mac only: powermetrics requires root) ──────────
-if [ "$MACHINE" = "mac" ]; then
-    if ! sudo -n true 2>/dev/null; then
-        if ! tty -s; then
-            error "sudo credentials not cached and no TTY available."
-            error "Run ${BOLD}sudo -v${RST} before detaching tmux."
-            exit 1
-        fi
-        sudo -v || { error "sudo is required for powermetrics."; exit 1; }
-    fi
-
-    # Temporary NOPASSWD rule so powermetrics never prompts mid-experiment.
-    # Uses /private/etc (real path on macOS) and ALL to cover any powermetrics
-    # invocation CodeCarbon may trigger internally.
-    SUDOERS_FILE="/private/etc/sudoers.d/energytracer_tmp"
-    echo "$USER ALL=(ALL) NOPASSWD: ALL" | sudo tee "$SUDOERS_FILE" > /dev/null
-    sudo chmod 440 "$SUDOERS_FILE"
-
-    (while kill -0 $$ 2>/dev/null; do sudo -n true; sleep 240; done) &
-    SUDO_KEEPALIVE_PID=$!
-    trap 'sudo rm -f "$SUDOERS_FILE"; kill $SUDO_KEEPALIVE_PID 2>/dev/null' EXIT
-fi
-
 GLOBAL_START=$(date +%s)
 
 echo ""
@@ -158,18 +150,15 @@ printf "  ${BOLD}${GREEN}⚡ EnergyTracer${RST} ${DIM}— Experiment Runner${RST
 printf "  ${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RST}\n"
 echo ""
 printf "  ${BOLD}Machine${RST}      ${GREEN}%s${RST}\n" "$MACHINE"
+printf "  ${BOLD}Mode${RST}         %s\n" "$([ "$IS_SSH" = "1" ] && printf "${CYAN}SSH (tmux)${RST}" || printf "${MAGENTA}Local${RST}")"
 printf "  ${BOLD}Profilers${RST}    ${CYAN}carbon${RST} + ${CYAN}%s${RST}\n" "$ARCH_PROFILER"
 printf "  ${BOLD}Warm-up${RST}      %d runs × 2 profilers ${DIM}(n=%d)${RST}\n" "$WARMUP_RUNS" "$WARMUP_N"
 printf "  ${BOLD}Measurement${RST}  %d runs × 2 profilers ${DIM}(n=%d)${RST}\n" "$MEASURE_RUNS" "$MEASURE_N"
 printf "  ${BOLD}Cooldown${RST}     %ds between measurements\n" "$COOLDOWN"
 echo ""
 warn "Do not interrupt — results may be incomplete."
-
-# On macOS, caffeinate -i prevents the system from idle-sleeping.
-if [ "$MACHINE" = "mac" ]; then
-    RUN="caffeinate -i"
-else
-    RUN=""
+if [ "$IS_SSH" = "1" ]; then
+    info "SSH mode: caffeinate active (PID ${CAFFEINATE_PID}), sudo NOPASSWD in place."
 fi
 
 # ── Phase 1/2: Warm-up ──────────────────────────────────
@@ -182,17 +171,25 @@ W_TOTAL=$((WARMUP_RUNS * 2))
 T0=$(date +%s)
 
 for i in $(seq 1 $WARMUP_RUNS); do
-    $RUN uv run ET -p carbon -n "$WARMUP_N" -o "warmup-$i" --shuffle >/dev/null 2>&1
+    uv run ET -p carbon -n "$WARMUP_N" -o "warmup-$i" --shuffle >/dev/null 2>&1
     show_progress $((i * 2 - 1)) "$W_TOTAL" "$T0"
 
-    $RUN uv run ET -p "$ARCH_PROFILER" -n "$WARMUP_N" -o "warmup-$i" --shuffle >/dev/null 2>&1
+    uv run ET -p "$ARCH_PROFILER" -n "$WARMUP_N" -o "warmup-$i" --shuffle >/dev/null 2>&1
     show_progress $((i * 2)) "$W_TOTAL" "$T0"
 done
 
 end_phase "$T0"
 
 # Discard warm-up results.
-[ -d "$OUTPUT_DIR" ] && rm -rf "$OUTPUT_DIR"
+# sudo is required in SSH mode because powermetrics (run as root) may
+# have created files owned by root inside the output directory.
+if [ -d "$OUTPUT_DIR" ]; then
+    if [ "$IS_SSH" = "1" ]; then
+        sudo rm -rf "$OUTPUT_DIR"
+    else
+        rm -rf "$OUTPUT_DIR"
+    fi
+fi
 dim "Warm-up results discarded."
 
 # ── Phase 2/2: Measurement ──────────────────────────────
@@ -206,11 +203,11 @@ T0=$(date +%s)
 
 for i in $(seq 1 $MEASURE_RUNS); do
     sleep "$COOLDOWN"
-    $RUN uv run ET -p carbon -n "$MEASURE_N" -o "measure-$i" --shuffle >/dev/null 2>&1
+    uv run ET -p carbon -n "$MEASURE_N" -o "measure-$i" --shuffle >/dev/null 2>&1
     show_progress $((i * 2 - 1)) "$M_TOTAL" "$T0"
 
     sleep "$COOLDOWN"
-    $RUN uv run ET -p "$ARCH_PROFILER" -n "$MEASURE_N" -o "measure-$i" --shuffle >/dev/null 2>&1
+    uv run ET -p "$ARCH_PROFILER" -n "$MEASURE_N" -o "measure-$i" --shuffle >/dev/null 2>&1
     show_progress $((i * 2)) "$M_TOTAL" "$T0"
 done
 
