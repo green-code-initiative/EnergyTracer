@@ -27,6 +27,8 @@
   - [CodeCarbon](#codecarbon)
 - [Automated Measurement Script](#automated-measurement-script)
 - [Analyzer (ET-analyzer)](#analyzer-et-analyzer)
+  - [Analyzer Command-Line Options](#analyzer-command-line-options)
+  - [Sample Report Output](#sample-report-output)
 - [Experiment Guide](#experiment-guide)
 - [Acknowledgements](#acknowledgements)
 - [License](#license)
@@ -203,12 +205,14 @@ To facilitate repeated measurements and comparisons, shell and batch scripts are
 
 | Mode | Profilers run | Use case |
 |---|---|---|
-| `mac` | `carbon` + `mac` (zeus_apple_silicon) | Apple Silicon machines |
-| `carbon` | `carbon` only | Any other platform |
+| `carbon` | `carbon` only | Any platform (cross-platform) |
+| `mac` | `mac` only (zeus_apple_silicon) | Apple Silicon machines |
+| `both` | `carbon` + `mac` | Apple Silicon — cross-profiler comparison |
 
 ```shell
-./run_experiment.sh mac      # macOS (Apple Silicon): runs both profilers
 ./run_experiment.sh carbon   # Any platform: runs CodeCarbon only
+./run_experiment.sh mac      # Apple Silicon: runs mac profiler only
+./run_experiment.sh both     # Apple Silicon: runs both profilers
 ```
 
 **`run_experiment.bat`** (Windows) runs CodeCarbon only — no argument needed:
@@ -217,7 +221,7 @@ To facilitate repeated measurements and comparisons, shell and batch scripts are
 run_experiment.bat
 ```
 
-When `mac` mode is selected, each iteration runs **two profilers** (`carbon` + `mac`), facilitating cross-profiler comparison. In `carbon` mode (or on Windows), only CodeCarbon is used.
+When `both` mode is selected, each iteration runs **two profilers** (`carbon` + `mac`), facilitating cross-profiler comparison. In `carbon` or `mac` mode (or on Windows), only the selected profiler is used.
 
 The script performs the following steps:
 
@@ -289,7 +293,7 @@ Running reliable energy experiments requires a **controlled environment**. The f
 Here is a quick summary of the key steps:
 
 1. **Prepare the environment** — close all non-essential apps, disconnect peripherals, plug in the charger, lock display/power settings, and ensure stable room temperature.
-2. **Run the automated script** — `./run_experiment.sh mac` (Apple Silicon) or `./run_experiment.sh carbon` (any platform). The script handles warm-up, 30 measurement runs with cooldowns, shuffled execution order, and automated analysis.
+2. **Run the automated script** — `./run_experiment.sh both` (Apple Silicon, both profilers), `./run_experiment.sh mac` (Apple Silicon, mac only), or `./run_experiment.sh carbon` (any platform). The script handles warm-up, 30 measurement runs with cooldowns, shuffled execution order, and automated analysis.
 3. **Do not interact** with the machine while the experiment is running.
 4. **Review the results** — inspect the generated reports under `results/`, the comparison plots, and CSV files.
 
