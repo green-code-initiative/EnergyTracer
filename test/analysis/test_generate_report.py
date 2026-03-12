@@ -8,7 +8,6 @@ import pytest
 
 from src.analysis.generate_report import _fmt_pvalue, generate_pr_report
 
-
 # ──────────────────────────────────────────────────────────────────────────────
 # Helpers
 # ──────────────────────────────────────────────────────────────────────────────

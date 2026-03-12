@@ -128,9 +128,7 @@ def generate_pr_report(
     # ── Verdict ───────────────────────────────────────────
     lines.append("### Verdict\n")
     if verdicts:
-        lines.append(
-            "Removing the code smell leads to measurable energy differences:"
-        )
+        lines.append("Removing the code smell leads to measurable energy differences:")
         lines.append("")
         lines.extend(verdicts)
         lines.append("")

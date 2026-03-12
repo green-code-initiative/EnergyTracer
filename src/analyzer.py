@@ -190,7 +190,7 @@ def merge_and_save_csv_groups(
             merged_file_paths[(profiler, data_type, smell_type)] = merged_output_path
             bar()
 
-    print() # ensure progress bar is followed by a newline
+    print()  # ensure progress bar is followed by a newline
 
     return merged_file_paths
 
