@@ -20,6 +20,9 @@ src/python/*
 # Experiment output
 output/*
 
+# Experiment results
+results/*
+
 # ── Testing ──
 .coverage
 htmlcov/

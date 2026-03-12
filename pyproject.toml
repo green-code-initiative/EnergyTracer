@@ -29,6 +29,8 @@ dependencies = [
 [project.scripts]
 ET = "src.main:cli"
 EnergyTracer = "src.main:cli"
+ET-analyzer = "src.analyzer:cli"
+EnergyTracer-analyzer = "src.analyzer:cli"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
