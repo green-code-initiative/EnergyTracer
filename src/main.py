@@ -36,6 +36,8 @@ def run_profiling(energy_profiler_cls, src_file, label, n_iter, verbose=False):
                     f"iter_{i}", lambda: exec(code, {"__name__": "__main__"})
                 )
                 bar()
+        print()  # ensure progress bar is followed by a newline
+
     except KeyboardInterrupt:
         if verbose:
             log.warn(f"Energy profiling for code {label} interrupted by user.")

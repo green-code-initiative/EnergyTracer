@@ -6,7 +6,7 @@ import pandas as pd
 
 from src.utilities.parser import parse_arguments
 
-from .analysis.statistical_analysis import generate_pr_report
+from .analysis.generate_report import generate_pr_report
 from .utilities import log
 
 ANALYSIS_DIR = Path("results")
@@ -27,11 +27,16 @@ def main(args):
     """
     if args.verbose:
         log.header("EnergyTracer Analyzer Configuration")
-        log.dim(f"Input directory: {args.path}")
+        log.dim(f"Input directory:  {args.path}")
+        log.dim(f"Output directory: {ANALYSIS_DIR}")
 
     Path(ANALYSIS_DIR).mkdir(exist_ok=True)
 
     process_csv_files(Path(args.path), verbose=args.verbose)
+
+    if args.verbose:
+        log.ok("Analysis complete.")
+        print()
 
 
 def process_csv_files(input_dir: Path, verbose: bool = False) -> None:
@@ -62,6 +67,9 @@ def process_csv_files(input_dir: Path, verbose: bool = False) -> None:
         log.warn(f"No CSV files found under '{input_dir}' — nothing to process.")
         return
 
+    if verbose:
+        log.header("Scanning for CSV files…")
+
     csv_files_by_group = classify_csv_files_by_group(all_csv_files)
 
     if not csv_files_by_group:
@@ -73,6 +81,9 @@ def process_csv_files(input_dir: Path, verbose: bool = False) -> None:
     merged_file_paths = merge_and_save_csv_groups(
         all_csv_files, csv_files_by_group, verbose=verbose
     )
+
+    if verbose:
+        log.header("PR Report Generation")
 
     generate_statistical_reports(merged_file_paths, verbose=verbose)
 
@@ -179,6 +190,8 @@ def merge_and_save_csv_groups(
             merged_file_paths[(profiler, data_type, smell_type)] = merged_output_path
             bar()
 
+    print() # ensure progress bar is followed by a newline
+
     return merged_file_paths
 
 
@@ -232,7 +245,7 @@ def generate_statistical_reports(
         report_file = ANALYSIS_DIR / data_type / profiler / f"{profiler}_report.md"
         report_file.write_text(report_content)
         if verbose:
-            log.ok(f"PR report saved → {report_file}")
+            log.ok(f"Report saved → {report_file}")
 
 
 def cli():
