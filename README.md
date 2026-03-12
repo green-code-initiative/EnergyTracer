@@ -26,6 +26,7 @@
   - [Mac Silicon (Zeus)](#mac-silicon-zeus)
   - [CodeCarbon](#codecarbon)
 - [Automated Measurement Script](#automated-measurement-script)
+- [Analyzer (ET-analyzer)](#analyzer-et-analyzer)
 - [Experiment Guide](#experiment-guide)
 - [Acknowledgements](#acknowledgements)
 - [License](#license)
@@ -223,10 +224,62 @@ The script performs the following steps:
 1. **Warm-up phases**: Runs 10 iterations of all profilers to stabilize the system and mitigate initial variability in measurements.
 2. **Measurement phases**: Runs 30 iterations of measurements for each profiler, with 1000 iterations of the code under test in each phase.
 3. **Cooldown periods**: Includes a one-minute cooldown between measurement phases to allow the system to return to baseline conditions and minimize thermal effects.
+4. **Analysis**: Runs `ET-analyzer` to merge all CSV files, compute statistical tests (Welch's t-test, Cohen's d), and generate Markdown reports under `results/`.
 
 To further reduce temporal bias, the execution order of code variants is randomized in each iteration using the `--shuffle` flag. The script also provides a terminal progress bar to indicate the current phase and iteration.
 
 > **Important note on reproducibility**: The results of energy measurements can be affected by various factors such as background processes, thermal conditions, and network activity. To ensure reproducible measurements, it is recommended to set up your system in a consistent state beforehand. See the [Experiment Guide](#experiment-guide) below for a complete checklist.
+
+
+## Analyzer (ET-analyzer)
+
+After collecting measurements with `ET`, use the **analyzer** to aggregate all runs, compute statistical tests, and produce a PR-ready Markdown report.
+
+```shell
+# Analyze all CSV files under the default output/ directory
+uv run ET-analyzer -v
+
+# Analyze a custom directory
+uv run ET-analyzer -p path/to/output -v
+```
+
+The analyzer:
+
+1. **Discovers** all CSV files under the input directory and classifies them by profiler, data type (raw / cleaned), and variant (with / without smell).
+2. **Merges** per-group CSVs into a single file per group and saves them under `results/`.
+3. **Generates a Markdown report** for each profiler / data-type pair with:
+   - A results table showing **only statistically significant** metrics (Welch's t-test, α = 0.05)
+   - Cohen's d effect size for each metric
+   - A verdict section summarizing the energy impact
+
+The report is designed to be directly copy-pasted into a GitHub Pull Request description.
+
+### Analyzer Command-Line Options
+
+| Flag | Description | Default |
+|---|---|---|
+| `-p`, `--path` | Input directory containing the CSV output | `output` |
+| `-v`, `--verbose` | Enable verbose output | off |
+
+### Sample Report Output
+
+```
+## Energy Report — `mac-silicon` (cleaned)
+
+> 29545 samples (with smell) vs 28704 samples (without smell) — α = 0.05
+
+| Metric | Δ mean | p-value | Cohen's d | Effect | Sig. |
+|---|---|---|---|---|---|
+| `cpu_mj` | +91.83% | 0.00e+00 | +5.236 | large | ✅ |
+| `dram_mj` | +93.70% | 0.00e+00 | +9.383 | large | ✅ |
+
+### Verdict
+Removing the code smell leads to measurable energy differences:
+- **`cpu_mj`**: 91.8% lower energy (Cohen's d = +5.236, large)
+- **`dram_mj`**: 93.7% lower energy (Cohen's d = +9.383, large)
+```
+
+> The automated experiment scripts (`run_experiment.sh` / `run_experiment.bat`) automatically run the analyzer after the measurement phase.
 
 
 ## Experiment Guide
@@ -236,9 +289,9 @@ Running reliable energy experiments requires a **controlled environment**. The f
 Here is a quick summary of the key steps:
 
 1. **Prepare the environment** — close all non-essential apps, disconnect peripherals, plug in the charger, lock display/power settings, and ensure stable room temperature.
-2. **Run the automated script** — `./run_experiment.sh mac` (Apple Silicon) or `./run_experiment.sh carbon` (any platform). The script handles warm-up, 30 measurement runs with cooldowns, and shuffled execution order.
+2. **Run the automated script** — `./run_experiment.sh mac` (Apple Silicon) or `./run_experiment.sh carbon` (any platform). The script handles warm-up, 30 measurement runs with cooldowns, shuffled execution order, and automated analysis.
 3. **Do not interact** with the machine while the experiment is running.
-4. **Analyze the results** — inspect the generated plots and CSV files; look for consistent differences, low variance, and check for outliers.
+4. **Review the results** — inspect the generated reports under `results/`, the comparison plots, and CSV files.
 
 For a printable checklist and detailed explanations of each step, refer to the [full guide](EXPERIMENT_GUIDE.md).
 

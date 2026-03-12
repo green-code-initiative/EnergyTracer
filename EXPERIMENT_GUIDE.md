@@ -102,13 +102,19 @@ A **60-second cooldown** separates each measurement run, giving the hardware tim
 
 ## 3. Analyze the Results
 
-Once the experiment completes, all results are saved under the `output/` directory.
+Once the experiment completes, the automated script runs **ET-analyzer** to aggregate, clean, and statistically compare the measurements. You can also run it manually:
+
+```shell
+uv run ET-analyzer -v
+```
 
 ### 3.1 Generated Outputs
 
 - **CSV files** — raw per-iteration energy data for each profiler and code variant, ready for custom statistical analysis
+- **Merged CSV files** — all runs concatenated per (profiler, data type, variant), saved under `results/`
 - **Comparison plots** — per-component (CPU, GPU, ANE/gCO₂, DRAM) and overall energy comparison charts
 - **Box plots** — distribution visualizations to inspect variance and outliers
+- **Markdown reports** — a PR-ready statistical report per profiler / data type, including Welch's t-test, Cohen's d effect sizes, and a verdict section (saved as `results/<data_type>/<profiler>/<profiler>_report.md`)
 
 ### 3.2 What to Look For
 

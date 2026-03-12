@@ -168,10 +168,10 @@ if [ "$IS_SSH" = "1" ]; then
     info "SSH mode: caffeinate active (PID ${CAFFEINATE_PID}), sudo NOPASSWD in place."
 fi
 
-# ── Phase 1/2: Warm-up ──────────────────────────────────
+# ── Phase 1/3: Warm-up ──────────────────────────────────
 
 echo ""
-printf "  ${BOLD}${BLUE}▸ Phase 1/2: Warm-up${RST}\n"
+printf "  ${BOLD}${BLUE}▸ Phase 1/3: Warm-up${RST}\n"
 echo ""
 
 W_TOTAL=$((WARMUP_RUNS * NUM_PROFILERS))
@@ -200,10 +200,10 @@ if [ -d "$OUTPUT_DIR" ]; then
 fi
 dim "Warm-up results discarded."
 
-# ── Phase 2/2: Measurement ──────────────────────────────
+# ── Phase 2/3: Measurement ──────────────────────────────
 
 echo ""
-printf "  ${BOLD}${BLUE}▸ Phase 2/2: Measurement${RST}\n"
+printf "  ${BOLD}${BLUE}▸ Phase 2/3: Measurement${RST}\n"
 echo ""
 
 M_TOTAL=$((MEASURE_RUNS * NUM_PROFILERS))
@@ -221,6 +221,14 @@ done
 
 end_phase "$T0"
 
+# ── Phase 3/3: Analysis ──────────────────────────────────
+
+echo ""
+printf "  ${BOLD}${BLUE}▸ Phase 3/3: Analysis${RST}\n"
+echo ""
+
+uv run ET-analyzer -p "$OUTPUT_DIR" -v
+
 # ── Summary ──────────────────────────────────────────────
 
 GLOBAL_END=$(date +%s)
@@ -230,5 +238,6 @@ echo ""
 printf "  ${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RST}\n"
 printf "  ${BOLD}${GREEN}✔ Experiment complete${RST}\n"
 printf "  ${BOLD}Total time${RST}   ${CYAN}%s${RST}\n" "$_FMT"
-printf "  ${BOLD}Results${RST}      ${GREEN}%s/${RST}\n" "$OUTPUT_DIR"
+printf "  ${BOLD}Measurements${RST} ${GREEN}%s/${RST}\n" "$OUTPUT_DIR"
+printf "  ${BOLD}Reports${RST}      ${GREEN}results/${RST}\n"
 echo ""

@@ -42,10 +42,10 @@ echo   %BOLD%Cooldown%RST%     %COOLDOWN%s between measurements
 echo.
 echo   %YELLOW%!%RST%  Do not interrupt - results may be incomplete.
 
-REM === Phase 1/2: Warm-up ===
+REM === Phase 1/3: Warm-up ===
 
 echo.
-echo   %BOLD%%BLUE%^> Phase 1/2: Warm-up%RST%
+echo   %BOLD%%BLUE%^> Phase 1/3: Warm-up%RST%
 echo.
 
 call :get_seconds T0
@@ -61,10 +61,10 @@ call :end_phase !T0!
 if exist "%OUTPUT_DIR%\" rmdir /s /q "%OUTPUT_DIR%"
 echo   %DIM%Warm-up results discarded.%RST%
 
-REM === Phase 2/2: Measurement ===
+REM === Phase 2/3: Measurement ===
 
 echo.
-echo   %BOLD%%BLUE%^> Phase 2/2: Measurement%RST%
+echo   %BOLD%%BLUE%^> Phase 2/3: Measurement%RST%
 echo.
 
 call :get_seconds T0
@@ -78,6 +78,14 @@ for /L %%i in (1,1,%MEASURE_RUNS%) do (
 
 call :end_phase !T0!
 
+REM === Phase 3/3: Analysis ===
+
+echo.
+echo   %BOLD%%BLUE%^> Phase 3/3: Analysis%RST%
+echo.
+
+uv run ET-analyzer -p %OUTPUT_DIR% -v
+
 REM === Summary ===
 
 call :get_seconds GLOBAL_END
@@ -87,8 +95,9 @@ call :fmt_duration !_total! TOTAL_STR
 echo.
 echo   %DIM%------------------------------------------------%RST%
 echo   %BOLD%%GREEN%v Experiment complete%RST%
-echo   %BOLD%Total time%RST%   %CYAN%!TOTAL_STR!%RST%
-echo   %BOLD%Results%RST%      %GREEN%'%OUTPUT_DIR%\'%RST%
+echo   %BOLD%Total time%RST%     %CYAN%!TOTAL_STR!%RST%
+echo   %BOLD%Measurements%RST%   %GREEN%'%OUTPUT_DIR%\'%RST%
+echo   %BOLD%Reports%RST%        %GREEN%'results\'%RST%
 echo.
 
 endlocal
