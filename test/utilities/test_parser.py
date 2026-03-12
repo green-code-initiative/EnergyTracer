@@ -104,7 +104,8 @@ def test_parse_all_arguments(monkeypatch):
 
 @pytest.mark.unit
 @pytest.mark.parametrize("origin", ["main", "analyzer"])
-def test_parse_arguments(origin):
+def test_parse_arguments(origin, monkeypatch):
+    monkeypatch.setattr("sys.argv", ["ET"])
     with pytest.raises(ValueError):
         parse_arguments(origin="invalid_origin")
     args = parse_arguments(origin=origin)
