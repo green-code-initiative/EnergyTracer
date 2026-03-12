@@ -150,8 +150,7 @@ def test_plot_all_metrics_with_empty_dataframe(tmp_path):
 
     plot_all_metrics(df, output_path, ane_label="ANE")
 
-    assert output_path.exists()
-    assert output_path.read_bytes().startswith(b"\x89PNG")
+    assert not output_path.exists()
     assert plt.get_fignums() == []
 
 
@@ -254,7 +253,8 @@ def test_plot_specific_metric_with_empty_dataframe(tmp_path, metric, ane_label):
 
     plot_specific_metrics(df, metric, output_path, unit="mJ")
 
-    _assert_valid_png_output(output_path, tmp_path, metric)
+    assert not output_path.exists()
+    assert plt.get_fignums() == []
 
 
 @pytest.mark.integration
@@ -324,7 +324,8 @@ def test_plot_moustache_with_empty_dataframe(tmp_path, metric, ane_label):
 
     plot_moustache(df, metric, output_path, unit="mJ")
 
-    _assert_valid_png_output(output_path, tmp_path, metric, is_moustache=True)
+    assert not output_path.exists()
+    assert plt.get_fignums() == []
 
 
 @pytest.mark.integration
@@ -340,16 +341,28 @@ def test_compare_histories_with_valid_histories(valid_histories, tmp_path, ane_l
     )
 
     # Check that all expected plots are generated
-    expected_plots = [
-        f"{metric}_energy_comparison.png"
-        for metric in ["cpu", "gpu", "dram", ane_label.lower()]
-    ] + [
-        f"{metric}_moustache.png"
-        for metric in ["cpu", "gpu", "dram", ane_label.lower()]
-    ]
+    expected_plots = (
+        [
+            f"{metric}_energy_comparison.png"
+            for metric in ["cpu", "gpu", "dram", ane_label.lower()]
+        ]
+        + [
+            f"{metric}_moustache.png"
+            for metric in ["cpu", "gpu", "dram", ane_label.lower()]
+        ]
+        + [
+            f"{metric}_violin.png"
+            for metric in ["cpu", "gpu", "dram", ane_label.lower()]
+        ]
+    )
 
     for plot_name in expected_plots:
-        subdir = "comparisons" if "energy_comparison" in plot_name else "moustaches"
+        if "energy_comparison" in plot_name:
+            subdir = "comparisons"
+        elif "moustache" in plot_name:
+            subdir = "moustaches"
+        else:
+            subdir = "violins"
         plot_path = Path(output_dir / "plots" / subdir / plot_name)
         assert plot_path.exists()
         assert plot_path.is_file()

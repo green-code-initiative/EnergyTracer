@@ -138,6 +138,10 @@ def main(args, energy_profiler_cls):
         args, energy_profiler_cls
     )
 
+    if not history_with_smell and not history_without_smell:
+        log.warn("Both profiling runs returned empty histories — nothing to save.")
+        return
+
     output_directory = Path("output") / args.profiler / args.output_dir
 
     save_raw(

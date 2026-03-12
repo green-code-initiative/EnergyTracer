@@ -20,6 +20,9 @@ def save_history(history: list, filename: str, directory: str = "output"):
     ------
         Claude Sonnet 4.6
     """
+    if not history:
+        return
+
     output_dir = Path(directory) / "csv"
     output_dir.mkdir(parents=True, exist_ok=True)
 

@@ -34,15 +34,7 @@ def test_save_history_empty(tmp_path):
     save_history(history, filename, directory=tmp_path)
 
     output_dir = tmp_path / "csv"
-    assert output_dir.exists() and output_dir.is_dir()
-
-    csv_file = output_dir / filename
-    assert csv_file.exists() and csv_file.is_file()
-
-    with Path.open(csv_file) as f:
-        lines = f.read().strip().split("\n")
-        assert lines[0] == "i,cpu_mj,gpu_mj,ane_mj,dram_mj"
-        assert len(lines) == 1
+    assert not output_dir.exists()
 
 
 @pytest.mark.integration

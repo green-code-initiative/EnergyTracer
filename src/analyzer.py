@@ -58,7 +58,17 @@ def process_csv_files(input_dir: Path, verbose: bool = False) -> None:
     """
     all_csv_files = list(input_dir.rglob("*.csv"))
 
+    if not all_csv_files:
+        log.warn(f"No CSV files found under '{input_dir}' — nothing to process.")
+        return
+
     csv_files_by_group = classify_csv_files_by_group(all_csv_files)
+
+    if not csv_files_by_group:
+        log.warn(
+            "No CSV files matched the expected directory structure — nothing to merge."
+        )
+        return
 
     merged_file_paths = merge_and_save_csv_groups(
         all_csv_files, csv_files_by_group, verbose=verbose
@@ -209,6 +219,13 @@ def generate_statistical_reports(
 
         df_with_smell = pd.read_csv(merged_file_paths[with_smell_key])
         df_without_smell = pd.read_csv(merged_file_paths[without_smell_key])
+
+        if df_with_smell.empty or df_without_smell.empty:
+            log.warn(
+                f"[{profiler}][{data_type}] one or both CSVs are empty — skipping report."
+            )
+            continue
+
         report_content = generate_pr_report(
             df_with_smell, df_without_smell, profiler, data_type
         )

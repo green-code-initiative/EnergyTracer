@@ -238,6 +238,10 @@ def test_generate_statistical_reports_skips_missing_variant(tmp_path):
 @pytest.mark.unit
 @pytest.mark.parametrize("verbose", [False, True])
 def test_process_csv_files_calls_pipeline(tmp_path, verbose):
+    # Create a dummy CSV so the early-return guard is not triggered
+    dummy_csv = tmp_path / "dummy.csv"
+    dummy_csv.touch()
+
     fake_group = {("p", "cleaned", "with_smell"): []}
     fake_merged = {("p", "cleaned", "with_smell"): tmp_path / "x.csv"}
 

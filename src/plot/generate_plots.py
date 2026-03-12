@@ -3,6 +3,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from src.utilities import log
+
 from .utilities.metrics_extractors import extract_metrics
 from .utilities.padding import pad
 
@@ -30,10 +32,18 @@ def compare_histories(
         Generates line plots for CPU, GPU, ANE/CO2, and DRAM energy consumption per iteration for both code
         versions, allowing for a visual comparison of their energy profiles.
     """
+    if not history1 and not history2:
+        log.warn("Both histories are empty — skipping all plots.")
+        return
+
     ane_label = "ANE" if profiler == "mac" else "CO2"
     ane_unit = "mJ" if profiler == "mac" else "g CO2eq"
 
     df = prepare_dataframe(history1, history2, ane_label)
+
+    if df.empty:
+        log.warn("Prepared DataFrame is empty — skipping all plots.")
+        return
 
     output_dir = Path(directory) / PLOTS_SUBDIR
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -125,6 +135,10 @@ def plot_all_metrics(df: pd.DataFrame, filename: str, ane_label: str = "ANE"):
     -----
         Creates a comprehensive line plot that allows for a visual comparison of the energy profiles of the two code versions across all collected metrics.
     """
+    if df.empty:
+        log.warn("DataFrame is empty — skipping combined metrics plot.")
+        return
+
     plt.figure(figsize=FIGURE_SIZE)
     plt.plot(df["Iteration"], df["CPU with code smell"], label="CPU with code smell")
     plt.plot(
@@ -178,6 +192,12 @@ def plot_specific_metrics(
     -----
         Creates a line plot that allows for a visual comparison of the specified energy metric between the two code versions across iterations, including average lines for each version.
     """
+    col_with = f"{metric.upper()} with code smell"
+    col_without = f"{metric.upper()} without code smell"
+    if df[col_with].dropna().empty or df[col_without].dropna().empty:
+        log.warn(f"Skipping line plot for '{metric}': one or both datasets are empty.")
+        return
+
     plt.figure(figsize=FIGURE_SIZE)
 
     for variant in ["with code smell", "without code smell"]:
@@ -218,10 +238,16 @@ def plot_moustache(df: pd.DataFrame, metric: str, filename: str, unit: str = "mJ
     -----
         Creates a box plot that allows for a visual comparison of the distribution of the specified energy metric between the two code versions, showing medians, quartiles, and potential outliers in the data.
     """
-    plt.figure(figsize=FIGURE_SIZE)
-
     data_with_smell = df[f"{metric.upper()} with code smell"].dropna()
     data_without_smell = df[f"{metric.upper()} without code smell"].dropna()
+
+    if data_with_smell.empty or data_without_smell.empty:
+        log.warn(
+            f"Skipping moustache plot for '{metric}': one or both datasets are empty."
+        )
+        return
+
+    plt.figure(figsize=FIGURE_SIZE)
 
     plt.boxplot(
         [data_with_smell, data_without_smell],
@@ -251,6 +277,12 @@ def plot_violin(df: pd.DataFrame, metric: str, filename: str, unit: str = "mJ"):
     """
     data_with_smell = df[f"{metric.upper()} with code smell"].dropna()
     data_without_smell = df[f"{metric.upper()} without code smell"].dropna()
+
+    if data_with_smell.empty or data_without_smell.empty:
+        log.warn(
+            f"Skipping violin plot for '{metric}': one or both datasets are empty."
+        )
+        return
 
     plt.figure(figsize=(10, 6))
 
