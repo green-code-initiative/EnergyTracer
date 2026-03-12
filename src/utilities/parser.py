@@ -8,7 +8,16 @@ DEFAULT_SRC_FILE_2 = "src/python/file_without_code_smell.py"
 DEFAULT_OUTPUT_DIR = "output"
 
 
-def parse_arguments():
+def parse_arguments(origin: str = "main"):
+    if origin == "main":
+        return parse_main_arguments()
+
+    if origin == "analyzer":
+        return parse_analyzer_arguments()
+    raise ValueError(f"Unknown argument origin: {origin}")
+
+
+def parse_main_arguments():
     parser = argparse.ArgumentParser(
         description="EnergyTracer: A tool to measure the energy consumption of code with and without code smells."
     )
@@ -58,6 +67,27 @@ def parse_arguments():
         "--verbose",
         action="store_true",
         help="Enable verbose output during profiling.",
+    )
+
+    return parser.parse_args()
+
+
+def parse_analyzer_arguments():
+    parser = argparse.ArgumentParser(
+        description="EnergyTracer Analyzer: A tool to analyze the energy consumption data collected by EnergyTracer."
+    )
+    parser.add_argument(
+        "-p",
+        "--path",
+        type=str,
+        default=DEFAULT_OUTPUT_DIR,
+        help="Path to the directory containing the raw data to analyze. Default is 'output'.",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable verbose output during analysis.",
     )
 
     return parser.parse_args()
