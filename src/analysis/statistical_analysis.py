@@ -407,8 +407,13 @@ def generate_pr_report(
         sig_mark = "\u2705 yes" if significant else "no"
         delta_str = f"{delta:+.2f}%" if not np.isnan(delta) else "N/A"
 
+        # For the carbon profiler, ane_mj actually stores the CO2 equivalent
+        display_metric = (
+            "co2_eq" if (profiler == "carbon" and metric == "ane_mj") else metric
+        )
+
         row = [
-            f"`{metric}`",
+            f"`{display_metric}`",
             f"{mean_with:.4f} mJ",
             f"{median_with:.4f} mJ",
             f"{std_with:.4f} mJ",
@@ -426,7 +431,7 @@ def generate_pr_report(
         if significant and abs(d) >= 0.2:
             direction = "lower" if mean_without < mean_with else "higher"
             verdicts.append(
-                f"- **`{metric}`**: removing the smell leads to **{abs(delta):.1f}% {direction}**"
+                f"- **`{display_metric}`**: removing the smell leads to **{abs(delta):.1f}% {direction}**"
                 f" energy consumption (Cohen\u2019s d\u2009=\u2009{d:+.3f}, {effect} effect)."
             )
 
