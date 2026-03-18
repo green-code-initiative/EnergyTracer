@@ -118,30 +118,23 @@ def generate_pr_report(
     if profiler == "mac":
         energy_cols.append("ane_mj")
 
-    total_ws_with = 0.0
-    total_ws_without = 0.0
+    total_j_with = 0.0
+    total_j_without = 0.0
 
     for col in energy_cols:
         if col in df_with.columns:
-            total_ws_with += (
+            total_j_with += (
                 sum(remove_outliers_zscore(df_with[col].dropna().tolist())) / 1000
             )
         if col in df_without.columns:
-            total_ws_without += (
+            total_j_without += (
                 sum(remove_outliers_zscore(df_without[col].dropna().tolist())) / 1000
             )
 
-    if total_ws_with > 0 and total_ws_without > 0:
-        pct_ws = (total_ws_with - total_ws_without) / total_ws_with * 100
-        direction_ws = "−" if total_ws_without < total_ws_with else "+"
-
+    if total_j_with > 0 and total_j_without > 0:
         lines.append("### Global Consumption\n")
-        lines.append("|  | With smell | Without smell | Δ |")
-        lines.append("|---|---:|---:|---:|")
-        lines.append(
-            f"| Total Energy | {total_ws_with:.2f} Ws | {total_ws_without:.2f} Ws "
-            f"| **{direction_ws}{abs(pct_ws):.1f}%** |"
-        )
+        lines.append("|  | With smell | Without smell |")
+        lines.append("|---|---:|---:|")
 
         total_s_with = (
             sum(remove_outliers_zscore(df_with["time_s"].dropna().tolist()))
@@ -154,17 +147,29 @@ def generate_pr_report(
             else 0
         )
 
+        n_with = len(df_with)
+        n_without = len(df_without)
+
         if total_s_with > 0 and total_s_without > 0:
-            avg_w_with = total_ws_with / total_s_with
-            avg_w_without = total_ws_without / total_s_without
-            pct_w = (avg_w_with - avg_w_without) / avg_w_with * 100
-            direction_w = "−" if avg_w_without < avg_w_with else "+"
+            avg_s_with = total_s_with / n_with
+            avg_s_without = total_s_without / n_without
             lines.append(
-                f"| Avg Power | {avg_w_with:.2f} W | {avg_w_without:.2f} W "
-                f"| **{direction_w}{abs(pct_w):.1f}%** |"
+                f"| **Execution Time** | ~{avg_s_with:.3f} s | ~{avg_s_without:.3f} s |"
             )
 
+            avg_w_with = total_j_with / total_s_with
+            avg_w_without = total_j_without / total_s_without
+            lines.append(
+                f"| **Average Power** | {avg_w_with:.3f} W | {avg_w_without:.3f} W |"
+            )
+
+        lines.append(
+            f"| **Total Energy** | {total_j_with:.2f} J | {total_j_without:.2f} J |"
+        )
+
         lines.append("\n")
+
+    lines.append("### Statistical Analysis\n")
 
     # ── Table (only if there are significant results) ─────
     if significant_rows:
