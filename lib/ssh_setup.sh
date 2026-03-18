@@ -1,9 +1,9 @@
 # ─────────────────────────────────────────────────────────
 # lib/ssh_setup.sh — SSH-specific setup for EnergyTracer on
-#  MacOS
+#  macOS
 #
-# Sourced (not executed) by run_experiment.sh when an SSH 
-# session is detected on a mac machine. Do not run this 
+# Sourced (not executed) by run_experiment.sh when an SSH
+# session is detected on a mac machine. Do not run this
 # file directly.
 # ─────────────────────────────────────────────────────────
 
@@ -17,7 +17,7 @@
 #      With no active user session, macOS may put the machine to sleep
 #      even while tmux processes are running. caffeinate -i prevents this.
 #
-#   2. BACKGROUND CPU THROTTLING 
+#   2. BACKGROUND CPU THROTTLING
 #      When no GUI/user session is active, background processes are
 #      silently moved to QOS_CLASS_BACKGROUND, which dramatically
 #      limits the CPU time they receive. tmux has no control over this.
