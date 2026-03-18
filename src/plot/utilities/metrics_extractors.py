@@ -1,4 +1,9 @@
-def extract_metrics(history: dict):
+from typing import Mapping, Optional, Sequence
+
+
+def extract_metrics(
+    history: Sequence[Mapping[str, float]],
+) -> tuple[list[float], list[float], list[float], list[float], list[Optional[float]]]:
     cpu_metrics = [entry["cpu_mj"] for entry in history]
     gpu_metrics = [entry["gpu_mj"] for entry in history]
     ane_metrics = [entry["ane_mj"] for entry in history]
