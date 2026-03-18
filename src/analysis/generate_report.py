@@ -113,6 +113,59 @@ def generate_pr_report(
         f"\u03b1\u2009=\u2009{ALPHA}\n"
     )
 
+    # ── Totals ──────────────────────────────────────────────
+    energy_cols = ["cpu_mj", "gpu_mj", "dram_mj"]
+    if profiler == "mac":
+        energy_cols.append("ane_mj")
+
+    total_ws_with = 0.0
+    total_ws_without = 0.0
+
+    for col in energy_cols:
+        if col in df_with.columns:
+            total_ws_with += (
+                sum(remove_outliers_zscore(df_with[col].dropna().tolist())) / 1000
+            )
+        if col in df_without.columns:
+            total_ws_without += (
+                sum(remove_outliers_zscore(df_without[col].dropna().tolist())) / 1000
+            )
+
+    if total_ws_with > 0 and total_ws_without > 0:
+        pct_ws = (total_ws_with - total_ws_without) / total_ws_with * 100
+        direction_ws = "−" if total_ws_without < total_ws_with else "+"
+
+        lines.append("### Global Consumption\n")
+        lines.append("|  | With smell | Without smell | Δ |")
+        lines.append("|---|---:|---:|---:|")
+        lines.append(
+            f"| Total Energy | {total_ws_with:.2f} Ws | {total_ws_without:.2f} Ws "
+            f"| **{direction_ws}{abs(pct_ws):.1f}%** |"
+        )
+
+        total_s_with = (
+            sum(remove_outliers_zscore(df_with["time_s"].dropna().tolist()))
+            if "time_s" in df_with.columns
+            else 0
+        )
+        total_s_without = (
+            sum(remove_outliers_zscore(df_without["time_s"].dropna().tolist()))
+            if "time_s" in df_without.columns
+            else 0
+        )
+
+        if total_s_with > 0 and total_s_without > 0:
+            avg_w_with = total_ws_with / total_s_with
+            avg_w_without = total_ws_without / total_s_without
+            pct_w = (avg_w_with - avg_w_without) / avg_w_with * 100
+            direction_w = "−" if avg_w_without < avg_w_with else "+"
+            lines.append(
+                f"| Avg Power | {avg_w_with:.2f} W | {avg_w_without:.2f} W "
+                f"| **{direction_w}{abs(pct_w):.1f}%** |"
+            )
+
+        lines.append("\n")
+
     # ── Table (only if there are significant results) ─────
     if significant_rows:
         lines.append(
