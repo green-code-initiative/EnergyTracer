@@ -343,14 +343,11 @@ def plot_specific_metrics(
 
         is_scalable_metric = metric.lower() == "co2" or metric.lower() == "time"
         can_scale = (
-            is_scalable_metric
-            and avg is not None
-            and math.isfinite(avg)
-            and avg > 0
+            is_scalable_metric and avg is not None and math.isfinite(avg) and avg > 0
         )
         if can_scale:
             leading_zeros = count_leading_zeros(avg)
-            scale_factor = 10 ** leading_zeros
+            scale_factor = 10**leading_zeros
             scale_suffix = f" x 10^{leading_zeros}"
         else:
             scale_factor = 1
