@@ -19,9 +19,14 @@ def get_metric_unit(metric: str, profiler: str, ane_label: str) -> str:
     """
     Returns the appropriate unit for a given metric based on profiler type.
     """
-    if metric.lower() == "time":
+    metric_lower = metric.lower()
+    # Determine which metric label should be treated as CO2-equivalent.
+    # Fall back to the original hard-coded "co2" if ane_label is empty.
+    co2_metric = ane_label.lower() if ane_label else "co2"
+
+    if metric_lower == "time":
         return "s"
-    if metric.lower() == "co2" and profiler == "carbon":
+    if metric_lower == co2_metric and profiler == "carbon":
         return "g CO2eq"
     return "mJ"
 
