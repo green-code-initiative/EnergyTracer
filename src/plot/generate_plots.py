@@ -363,7 +363,7 @@ def plot_specific_metrics(
         if metric.lower() == "total power" and x_axis_normalized == "time":
             time_col_iteration = f"Time {variant}"
             if time_col_iteration in df:
-                energy_j = (df[col] * df[time_col_iteration]).sum()
+                energy_j = (df[col] * df[time_col_iteration]).dropna().sum()
                 label += f" | Total: {energy_j:.2f} Ws"
 
         plt.axhline(
