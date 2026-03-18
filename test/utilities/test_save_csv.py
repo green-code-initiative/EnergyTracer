@@ -8,8 +8,22 @@ from src.utilities.save_csv import save_history
 @pytest.mark.integration
 def test_save_history(tmp_path):
     history = [
-        {"i": 0, "cpu_mj": 10.5, "gpu_mj": 5.2, "ane_mj": 3.1, "dram_mj": 1.0},
-        {"i": 1, "cpu_mj": 11.0, "gpu_mj": 5.5, "ane_mj": 3.3, "dram_mj": 1.2},
+        {
+            "i": 0,
+            "cpu_mj": 10.5,
+            "gpu_mj": 5.2,
+            "ane_mj": 3.1,
+            "dram_mj": 1.0,
+            "time_s": 0.5,
+        },
+        {
+            "i": 1,
+            "cpu_mj": 11.0,
+            "gpu_mj": 5.5,
+            "ane_mj": 3.3,
+            "dram_mj": 1.2,
+            "time_s": 1.0,
+        },
     ]
     filename = "test_history.csv"
     save_history(history, filename, directory=tmp_path)
@@ -22,9 +36,9 @@ def test_save_history(tmp_path):
 
     with Path.open(csv_file) as f:
         lines = f.read().strip().split("\n")
-        assert lines[0] == "i,cpu_mj,gpu_mj,ane_mj,dram_mj"
-        assert lines[1] == "0,10.5,5.2,3.1,1.0"
-        assert lines[2] == "1,11.0,5.5,3.3,1.2"
+        assert lines[0] == "i,cpu_mj,gpu_mj,ane_mj,dram_mj,time_s"
+        assert lines[1] == "0,10.5,5.2,3.1,1.0,0.5"
+        assert lines[2] == "1,11.0,5.5,3.3,1.2,1.0"
 
 
 @pytest.mark.integration
@@ -54,15 +68,22 @@ def test_save_history_missing_fields(tmp_path):
 
     with Path.open(csv_file) as f:
         lines = f.read().strip().split("\n")
-        assert lines[0] == "i,cpu_mj,gpu_mj,ane_mj,dram_mj"
-        assert lines[1] == "0,10.5,,,"
-        assert lines[2] == "1,,5.5,,"
+        assert lines[0] == "i,cpu_mj,gpu_mj,ane_mj,dram_mj,time_s"
+        assert lines[1] == "0,10.5,,,,"
+        assert lines[2] == "1,,5.5,,,"
 
 
 @pytest.mark.integration
 def test_save_history_nonexistent_directory(tmp_path):
     history = [
-        {"i": 0, "cpu_mj": 10.5, "gpu_mj": 5.2, "ane_mj": 3.1, "dram_mj": 1.0},
+        {
+            "i": 0,
+            "cpu_mj": 10.5,
+            "gpu_mj": 5.2,
+            "ane_mj": 3.1,
+            "dram_mj": 1.0,
+            "time_s": 0.5,
+        },
     ]
     filename = "test_history.csv"
     non_existent_dir = tmp_path / "non_existent_dir"
@@ -76,17 +97,31 @@ def test_save_history_nonexistent_directory(tmp_path):
 
     with Path.open(csv_file) as f:
         lines = f.read().strip().split("\n")
-        assert lines[0] == "i,cpu_mj,gpu_mj,ane_mj,dram_mj"
-        assert lines[1] == "0,10.5,5.2,3.1,1.0"
+        assert lines[0] == "i,cpu_mj,gpu_mj,ane_mj,dram_mj,time_s"
+        assert lines[1] == "0,10.5,5.2,3.1,1.0,0.5"
 
 
 @pytest.mark.integration
 def test_save_history_overwrite(tmp_path):
     history1 = [
-        {"i": 0, "cpu_mj": 10.5, "gpu_mj": 5.2, "ane_mj": 3.1, "dram_mj": 1.0},
+        {
+            "i": 0,
+            "cpu_mj": 10.5,
+            "gpu_mj": 5.2,
+            "ane_mj": 3.1,
+            "dram_mj": 1.0,
+            "time_s": 0.5,
+        },
     ]
     history2 = [
-        {"i": 0, "cpu_mj": 20.5, "gpu_mj": 10.2, "ane_mj": 6.1, "dram_mj": 2.0},
+        {
+            "i": 0,
+            "cpu_mj": 20.5,
+            "gpu_mj": 10.2,
+            "ane_mj": 6.1,
+            "dram_mj": 2.0,
+            "time_s": 1.0,
+        },
     ]
     filename = "test_history.csv"
     save_history(history1, filename, directory=tmp_path)
@@ -100,13 +135,20 @@ def test_save_history_overwrite(tmp_path):
 
     with Path.open(csv_file) as f:
         lines = f.read().strip().split("\n")
-        assert lines[0] == "i,cpu_mj,gpu_mj,ane_mj,dram_mj"
-        assert lines[1] == "0,20.5,10.2,6.1,2.0"
+        assert lines[0] == "i,cpu_mj,gpu_mj,ane_mj,dram_mj,time_s"
+        assert lines[1] == "0,20.5,10.2,6.1,2.0,1.0"
 
 
 def test_save_history_invalid_filename(tmp_path):
     history = [
-        {"i": 0, "cpu_mj": 10.5, "gpu_mj": 5.2, "ane_mj": 3.1, "dram_mj": 1.0},
+        {
+            "i": 0,
+            "cpu_mj": 10.5,
+            "gpu_mj": 5.2,
+            "ane_mj": 3.1,
+            "dram_mj": 1.0,
+            "time_s": 0.5,
+        },
     ]
     invalid_filename = 'invalid:/\\*?"<>|.csv'
     try:
@@ -126,6 +168,7 @@ def test_save_history_large_history(tmp_path):
             "gpu_mj": i * 0.5,
             "ane_mj": i * 0.2,
             "dram_mj": i * 0.1,
+            "time_s": i * 0.05,
         }
         for i in range(1000)
     ]
@@ -140,8 +183,8 @@ def test_save_history_large_history(tmp_path):
 
     with Path.open(csv_file) as f:
         lines = f.read().strip().split("\n")
-        assert lines[0] == "i,cpu_mj,gpu_mj,ane_mj,dram_mj"
+        assert lines[0] == "i,cpu_mj,gpu_mj,ane_mj,dram_mj,time_s"
         assert len(lines) == 1001
         for i in range(1, 1001):
-            expected_line = f"{i - 1},{(i - 1) * 1.0},{(i - 1) * 0.5},{(i - 1) * 0.2},{(i - 1) * 0.1}"
+            expected_line = f"{i - 1},{(i - 1) * 1.0},{(i - 1) * 0.5},{(i - 1) * 0.2},{(i - 1) * 0.1},{(i - 1) * 0.05}"
             assert lines[i] == expected_line

@@ -15,6 +15,94 @@ LEGEND_FONTSIZE = "small"
 PLOTS_SUBDIR = "plots"
 
 
+def get_metric_unit(metric: str, profiler: str, ane_label: str) -> str:
+    """
+    Returns the appropriate unit for a given metric based on profiler type.
+    """
+    if metric.lower() == "time":
+        return "s"
+    if metric.lower() == "co2" and profiler == "carbon":
+        return "g CO2eq"
+    return "mJ"
+
+
+def setup_plotting_directories(output_dir: Path) -> dict:
+    """
+    Creates all required subdirectories for plot outputs.
+    Returns a dictionary with paths to each subdirectory.
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    dirs = {
+        "comparisons": output_dir / "comparisons",
+        "time": output_dir / "time",
+        "moustaches": output_dir / "moustaches",
+        "violins": output_dir / "violins",
+    }
+
+    for dir_path in dirs.values():
+        dir_path.mkdir(parents=True, exist_ok=True)
+
+    return dirs
+
+
+def plot_metric_comparisons(
+    df: pd.DataFrame, dirs: dict, metrics: list, ane_label: str, profiler: str
+) -> None:
+    """
+    Generates comparison plots for each metric across iterations and over time.
+    """
+    for metric in metrics:
+        unit = get_metric_unit(metric, profiler, ane_label)
+
+        plot_specific_metrics(
+            df,
+            metric,
+            dirs["comparisons"] / f"{metric}_energy_comparison.png",
+            unit=unit,
+        )
+        if metric.lower() != "time":
+            plot_specific_metrics(
+                df,
+                metric,
+                dirs["time"] / f"{metric}_energy_over_time.png",
+                unit=unit,
+                x_axis="time",
+            )
+
+    plot_specific_metrics(
+        df,
+        "total power",
+        dirs["time"] / "total_power_over_time.png",
+        unit="W",
+        x_axis="time",
+    )
+
+
+def plot_metric_distributions(
+    df: pd.DataFrame, dirs: dict, metrics: list, ane_label: str, profiler: str
+) -> None:
+    """
+    Generates distribution plots (box and violin plots) for each metric.
+    """
+    for metric in metrics:
+        unit = get_metric_unit(metric, profiler, ane_label)
+
+        plot_moustache(
+            df,
+            metric,
+            dirs["moustaches"] / f"{metric}_moustache.png",
+            unit=unit,
+        )
+
+        plot_violin(
+            df,
+            metric,
+            dirs["violins"] / f"{metric}_violin.png",
+            unit=unit,
+        )
+
+
 def compare_histories(
     history1, history2, profiler: str = "carbon", directory: str = "output"
 ):
@@ -38,8 +126,6 @@ def compare_histories(
         return
 
     ane_label = "ANE" if profiler == "mac" else "CO2"
-    ane_unit = "mJ" if profiler == "mac" else "g CO2eq"
-
     df = prepare_dataframe(history1, history2, ane_label)
 
     if df.empty:
@@ -47,42 +133,16 @@ def compare_histories(
         return
 
     output_dir = Path(directory) / PLOTS_SUBDIR
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    comparaison_directory = output_dir / "comparisons"
-    comparaison_directory.mkdir(parents=True, exist_ok=True)
-
-    moustache_directory = output_dir / "moustaches"
-    moustache_directory.mkdir(parents=True, exist_ok=True)
-
-    violin_directory = output_dir / "violins"
-    violin_directory.mkdir(parents=True, exist_ok=True)
+    dirs = setup_plotting_directories(output_dir)
 
     plot_all_metrics(
-        df, comparaison_directory / "all_energy_comparison.png", ane_label=ane_label
+        df, dirs["comparisons"] / "all_energy_comparison.png", ane_label=ane_label
     )
 
-    for metric in ["cpu", "gpu", "dram", ane_label.lower()]:
-        plot_specific_metrics(
-            df,
-            metric,
-            comparaison_directory / f"{metric}_energy_comparison.png",
-            unit=ane_unit if metric == ane_label.lower() else "mJ",
-        )
+    metrics = ["cpu", "gpu", "dram", ane_label.lower(), "time"]
 
-        plot_moustache(
-            df,
-            metric,
-            moustache_directory / f"{metric}_moustache.png",
-            unit=ane_unit if metric == ane_label.lower() else "mJ",
-        )
-
-        plot_violin(
-            df,
-            metric,
-            violin_directory / f"{metric}_violin.png",
-            unit=ane_unit if metric == ane_label.lower() else "mJ",
-        )
+    plot_metric_comparisons(df, dirs, metrics, ane_label, profiler)
+    plot_metric_distributions(df, dirs, metrics, ane_label, profiler)
 
 
 def prepare_dataframe(history1, history2, ane_label: str):
@@ -99,8 +159,12 @@ def prepare_dataframe(history1, history2, ane_label: str):
     -------
         A pandas DataFrame structured for plotting, with columns for each energy metric and code version, and rows corresponding to iterations.
     """
-    cpu_metrics1, gpu_metrics1, ane_metrics1, dram_metrics1 = extract_metrics(history1)
-    cpu_metrics2, gpu_metrics2, ane_metrics2, dram_metrics2 = extract_metrics(history2)
+    cpu_metrics1, gpu_metrics1, ane_metrics1, dram_metrics1, time_metrics1 = (
+        extract_metrics(history1)
+    )
+    cpu_metrics2, gpu_metrics2, ane_metrics2, dram_metrics2, time_metrics2 = (
+        extract_metrics(history2)
+    )
 
     max_len = max(len(history1), len(history2))
     iterations = list(range(max_len))
@@ -116,10 +180,47 @@ def prepare_dataframe(history1, history2, ane_label: str):
             f"{ane_label} without code smell": pad(ane_metrics2, max_len),
             "DRAM with code smell": pad(dram_metrics1, max_len),
             "DRAM without code smell": pad(dram_metrics2, max_len),
+            "Time with code smell": pad(time_metrics1, max_len),
+            "Time without code smell": pad(time_metrics2, max_len),
         }
     )
 
+    df["Cumulative Time with code smell"] = cumulative_time_series(
+        df["Time with code smell"]
+    )
+    df["Cumulative Time without code smell"] = cumulative_time_series(
+        df["Time without code smell"]
+    )
+
+    total_energy_with = (
+        df["CPU with code smell"]
+        + df["GPU with code smell"]
+        + df["DRAM with code smell"]
+    )
+    total_energy_without = (
+        df["CPU without code smell"]
+        + df["GPU without code smell"]
+        + df["DRAM without code smell"]
+    )
+
+    if ane_label == "ANE":
+        total_energy_with = total_energy_with + df["ANE with code smell"]
+        total_energy_without = total_energy_without + df["ANE without code smell"]
+
+    # mJ -> J (divide by 1000), then J / s -> W.
+    df["TOTAL POWER with code smell"] = (total_energy_with / 1000).div(
+        df["Time with code smell"].where(df["Time with code smell"] > 0)
+    )
+    df["TOTAL POWER without code smell"] = (total_energy_without / 1000).div(
+        df["Time without code smell"].where(df["Time without code smell"] > 0)
+    )
+
     return df
+
+
+def cumulative_time_series(series: pd.Series) -> pd.Series:
+    cumulative = series.fillna(0).cumsum()
+    return cumulative.where(series.notna())
 
 
 def plot_all_metrics(df: pd.DataFrame, filename: str, ane_label: str = "ANE"):
@@ -137,7 +238,7 @@ def plot_all_metrics(df: pd.DataFrame, filename: str, ane_label: str = "ANE"):
         Creates a comprehensive line plot that allows for a visual comparison of the energy profiles of the two code versions across all collected metrics.
     """
     if df.empty:
-        log.warn("DataFrame is empty — skipping combined metrics plot.")
+        log.warn("DataFrame is empty - skipping combined metrics plot.")
         return
 
     plt.figure(figsize=FIGURE_SIZE)
@@ -177,7 +278,11 @@ def plot_all_metrics(df: pd.DataFrame, filename: str, ane_label: str = "ANE"):
 
 
 def plot_specific_metrics(
-    df: pd.DataFrame, metric: str, filename: str, unit: str = "mJ"
+    df: pd.DataFrame,
+    metric: str,
+    filename: str,
+    unit: str = "mJ",
+    x_axis: str = "iteration",
 ):
     """
     Generates a line plot comparing a specific energy metric (CPU, GPU, ANE/CO2, or DRAM) per iteration for both code versions.
@@ -188,32 +293,62 @@ def plot_specific_metrics(
         metric: The specific metric to plot ("cpu", "gpu", "dram", or "ane"/"co2" depending on the profiler).
         filename: Path where the generated plot will be saved.
         unit: Unit of the metric for labeling the y-axis (default is "mJ", but can be "g CO2eq" for the CO2 metric when using the carbon profiler).
+        x_axis: X-axis mode. Use "iteration" (default) to plot per iteration, or "time" to plot metric values over cumulative execution time.
 
     Notes
     -----
         Creates a line plot that allows for a visual comparison of the specified energy metric between the two code versions across iterations, including average lines for each version.
     """
-    col_with = f"{metric.upper()} with code smell"
-    col_without = f"{metric.upper()} without code smell"
+    metric_label = "Time" if metric.lower() == "time" else metric.upper()
+    col_with = f"{metric_label} with code smell"
+    col_without = f"{metric_label} without code smell"
+
     if df[col_with].dropna().empty or df[col_without].dropna().empty:
         log.warn(f"Skipping line plot for '{metric}': one or both datasets are empty.")
         return
 
+    x_axis_normalized = x_axis.lower()
+    if x_axis_normalized not in {"iteration", "time"}:
+        raise ValueError("x_axis must be either 'iteration' or 'time'")
+
+    for variant in ["with code smell", "without code smell"]:
+        x_col = (
+            "Iteration"
+            if x_axis_normalized == "iteration"
+            else f"Cumulative Time {variant}"
+        )
+        if df[x_col].dropna().empty:
+            log.warn(
+                f"Skipping line plot for '{metric}': x-axis data is empty for '{variant}'."
+            )
+            return
+
     plt.figure(figsize=FIGURE_SIZE)
 
     for variant in ["with code smell", "without code smell"]:
-        col = f"{metric.upper()} {variant}"
-        avg = df[col].mean()
-        (line,) = plt.plot(
-            df["Iteration"], df[col], label=f"{metric.upper()} {variant}"
+        col = f"{metric_label} {variant}"
+        x_col = (
+            "Iteration"
+            if x_axis_normalized == "iteration"
+            else f"Cumulative Time {variant}"
         )
 
-        is_co2 = metric.lower() == "co2"
-        scale_factor = 10 ** count_leading_zeros(avg) if is_co2 else 1
-        scale_suffix = " x 10^" + str(count_leading_zeros(avg)) if is_co2 else ""
+        avg = df[col].mean()
+        (line,) = plt.plot(df[x_col], df[col], label=f"{metric_label} {variant}")
+
+        is_scalable = metric.lower() == "co2" or metric.lower() == "time"
+        scale_factor = 10 ** count_leading_zeros(avg) if is_scalable else 1
+        scale_suffix = " x 10^" + str(count_leading_zeros(avg)) if is_scalable else ""
+        per_label = " / iteration" if x_axis_normalized == "iteration" else ""
         label = (
-            f"Avg {variant}: {avg * scale_factor:.3f} {scale_suffix}{unit} / iteration"
+            f"Avg {variant}: {avg * scale_factor:.3f} {scale_suffix}{unit}{per_label}"
         )
+
+        if metric.lower() == "total power" and x_axis_normalized == "time":
+            time_col_iteration = f"Time {variant}"
+            if time_col_iteration in df:
+                energy_j = (df[col] * df[time_col_iteration]).sum()
+                label += f" | Total: {energy_j:.2f} Ws"
 
         plt.axhline(
             y=avg,
@@ -223,9 +358,13 @@ def plot_specific_metrics(
             label=label,
         )
 
-    plt.xlabel("Iteration")
-    plt.ylabel(f"{metric.upper()} ({unit})")
-    plt.title(f"{metric.upper()} Consumption Comparison")
+    plt.xlabel("Iteration" if x_axis_normalized == "iteration" else "Time (s)")
+    plt.ylabel(f"{metric_label} ({unit})")
+    plt.title(
+        f"{metric_label} Consumption Comparison"
+        if x_axis_normalized == "iteration"
+        else f"{metric_label} over Time"
+    )
     plt.legend(fontsize=LEGEND_FONTSIZE)
     plt.grid(True)
     plt.savefig(filename, dpi=FIGURE_DPI)
@@ -253,8 +392,12 @@ def plot_moustache(df: pd.DataFrame, metric: str, filename: str, unit: str = "mJ
     -----
         Creates a box plot that allows for a visual comparison of the distribution of the specified energy metric between the two code versions, showing medians, quartiles, and potential outliers in the data.
     """
-    data_with_smell = df[f"{metric.upper()} with code smell"].dropna()
-    data_without_smell = df[f"{metric.upper()} without code smell"].dropna()
+    metric_label = "Time" if metric.lower() == "time" else metric.upper()
+    col_with = f"{metric_label} with code smell"
+    col_without = f"{metric_label} without code smell"
+
+    data_with_smell = df[col_with].dropna()
+    data_without_smell = df[col_without].dropna()
 
     if data_with_smell.empty or data_without_smell.empty:
         log.warn(
@@ -290,8 +433,12 @@ def plot_violin(df: pd.DataFrame, metric: str, filename: str, unit: str = "mJ"):
     -----
         This function was generated by Claude Sonnet 4.6, with the plot_moustache function as a reference.
     """
-    data_with_smell = df[f"{metric.upper()} with code smell"].dropna()
-    data_without_smell = df[f"{metric.upper()} without code smell"].dropna()
+    metric_label = "Time" if metric.lower() == "time" else metric.upper()
+    col_with = f"{metric_label} with code smell"
+    col_without = f"{metric_label} without code smell"
+
+    data_with_smell = df[col_with].dropna()
+    data_without_smell = df[col_without].dropna()
 
     if data_with_smell.empty or data_without_smell.empty:
         log.warn(

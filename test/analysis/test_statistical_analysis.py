@@ -28,10 +28,17 @@ from src.analysis.statistical_analysis import (
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-def _make_history(cpu_values, gpu=0.0, ane=0.0, dram=0.0):
+def _make_history(cpu_values, gpu=0.0, ane=0.0, dram=0.0, time=0.0):
     """Build a history list from CPU values (shorthand for tests)."""
     return [
-        {"i": i, "cpu_mj": v, "gpu_mj": gpu, "ane_mj": ane, "dram_mj": dram}
+        {
+            "i": i,
+            "cpu_mj": v,
+            "gpu_mj": gpu,
+            "ane_mj": ane,
+            "dram_mj": dram,
+            "time_s": time,
+        }
         for i, v in enumerate(cpu_values)
     ]
 
@@ -258,6 +265,7 @@ class TestAnalyseHistories:
                 "gpu_mj": rng.normal(5, 0.3),
                 "ane_mj": rng.normal(2, 0.1),
                 "dram_mj": rng.normal(1, 0.05),
+                "time_s": rng.normal(0.1, 0.01),
             }
             for i in range(30)
         ]
@@ -268,6 +276,7 @@ class TestAnalyseHistories:
                 "gpu_mj": rng.normal(5, 0.3),
                 "ane_mj": rng.normal(2, 0.1),
                 "dram_mj": rng.normal(1, 0.05),
+                "time_s": rng.normal(0.1, 0.01),
             }
             for i in range(30)
         ]

@@ -30,7 +30,7 @@ ZSCORE_THRESHOLD = 3
 ALPHA = 0.05
 
 # Metrics to analyse
-METRICS = ("cpu_mj", "gpu_mj", "ane_mj", "dram_mj")
+METRICS = ("cpu_mj", "gpu_mj", "ane_mj", "dram_mj", "time_s")
 
 
 def remove_outliers_zscore(

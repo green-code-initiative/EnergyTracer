@@ -14,7 +14,13 @@ def save_history(history: list, filename: str, directory: str = "output"):
 
     Notes
     -----
-        The CSV file will have the following columns: i, cpu_mj, gpu_mj, ane_mj, dram_mj.
+        The CSV file will have the following columns: i, cpu_mj, gpu_mj, ane_mj, dram_mj, time_s.
+         - i: The iteration index (starting from 0).
+         - cpu_mj: The energy consumed by the CPU in millijoules (mJ).
+         - gpu_mj: The energy consumed by the GPU in millijoules (mJ).
+         - ane_mj: The energy consumed by the Apple Neural Engine (ANE) in millijoules (mJ) or the CO2 equivalent emissions in milligrams (mg) for the Carbon profiler.
+         - dram_mj: The energy consumed by the RAM in millijoules (mJ).
+         - time_s: The wall-clock duration of the iteration in seconds (s).
 
     Author
     ------
@@ -30,7 +36,7 @@ def save_history(history: list, filename: str, directory: str = "output"):
 
     with path.open("w", newline="") as f:
         writer = csv.DictWriter(
-            f, fieldnames=["i", "cpu_mj", "gpu_mj", "ane_mj", "dram_mj"]
+            f, fieldnames=["i", "cpu_mj", "gpu_mj", "ane_mj", "dram_mj", "time_s"]
         )
         writer.writeheader()
         writer.writerows(history)

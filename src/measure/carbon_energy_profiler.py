@@ -92,5 +92,6 @@ class EnergyProfiler(AbstractEnergyProfiler):
                     "gpu_mj": total_gpu_mj * ratio,
                     "ane_mj": total_co2_mg * ratio,
                     "dram_mj": total_ram_mj * ratio,
+                    "time_s": dt,
                 }
             )

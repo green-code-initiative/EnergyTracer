@@ -1,3 +1,5 @@
+import time
+
 from zeus_apple_silicon import AppleEnergyMonitor
 
 from .abstract_energy_profiler import AbstractEnergyProfiler
@@ -27,17 +29,20 @@ class EnergyProfiler(AbstractEnergyProfiler):
 
         Returns
         -------
-            A dict with keys: i, cpu_mj, gpu_mj, ane_mj, dram_mj.
+            A dict with keys: i, cpu_mj, gpu_mj, ane_mj, dram_mj, time_s.
         """
         self.monitor.begin_window(label)
+        t0 = time.perf_counter()
         fn()
         metrics = self.monitor.end_window(label)
+        t1 = time.perf_counter()
         entry = {
             "i": len(self.history),
             "cpu_mj": metrics.cpu_total_mj,
             "gpu_mj": metrics.gpu_mj,
             "ane_mj": metrics.ane_mj,
             "dram_mj": metrics.dram_mj,
+            "time_s": t1 - t0,
         }
         self.history.append(entry)
         return entry

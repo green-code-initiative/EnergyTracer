@@ -99,8 +99,9 @@ def generate_pr_report(
 
         if abs(d) >= 0.2:
             direction = "lower" if mean_without < mean_with else "higher"
+            metric_type = "time" if metric == "time_s" else "energy"
             verdicts.append(
-                f"- **`{display_metric}`**: {abs(delta):.1f}% {direction} energy "
+                f"- **`{display_metric}`**: {abs(delta):.1f}% {direction} {metric_type} "
                 f"(Cohen\u2019s d\u2009=\u2009{d:+.3f}, {effect})"
             )
 
