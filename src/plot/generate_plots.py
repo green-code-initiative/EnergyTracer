@@ -341,9 +341,20 @@ def plot_specific_metrics(
         avg = df[col].mean()
         (line,) = plt.plot(df[x_col], df[col], label=f"{metric_label} {variant}")
 
-        is_scalable = metric.lower() == "co2" or metric.lower() == "time"
-        scale_factor = 10 ** count_leading_zeros(avg) if is_scalable else 1
-        scale_suffix = " x 10^" + str(count_leading_zeros(avg)) if is_scalable else ""
+        is_scalable_metric = metric.lower() == "co2" or metric.lower() == "time"
+        can_scale = (
+            is_scalable_metric
+            and avg is not None
+            and math.isfinite(avg)
+            and avg > 0
+        )
+        if can_scale:
+            leading_zeros = count_leading_zeros(avg)
+            scale_factor = 10 ** leading_zeros
+            scale_suffix = f" x 10^{leading_zeros}"
+        else:
+            scale_factor = 1
+            scale_suffix = ""
         per_label = " / iteration" if x_axis_normalized == "iteration" else ""
         label = (
             f"Avg {variant}: {avg * scale_factor:.3f} {scale_suffix}{unit}{per_label}"
