@@ -1816,11 +1816,11 @@ wheels = [
 
 [[package]]
 name = "zeus-apple-silicon"
-version = "1.0.4"
+version = "1.1.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/42/4f/5c44fc2fc12430a3e88a1a92d53552ba653ff452bf4b82bcd7bbc2991025/zeus_apple_silicon-1.0.4.tar.gz", hash = "sha256:b0e962581bcf9c3e2f78ebae7089e9a7ec9d720bdf84b96b97fd1df9fb0038b2", size = 25693, upload-time = "2025-04-25T05:57:00.937Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/64/a5/7da627c178365b90d2e4c83c78ed3ccb085251d4247584d8ca9929e86ffb/zeus_apple_silicon-1.1.0.tar.gz", hash = "sha256:ca99b33e9e375498b2f5b9671eee50258ed7483c10d62eac7595cbb882ce3a4e", size = 46173, upload-time = "2026-03-29T05:30:46.405Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/54/2e/399e9c17ca2997387b1bb123ac8373251ae26845c6c9640a91e95170ddc1/zeus_apple_silicon-1.0.4-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:c0242e5f44cc44b65433ea2cf4e976c3ce49034616039ba55d40f72926af5c7b", size = 58209, upload-time = "2025-04-25T05:56:52.199Z" },
-    { url = "https://files.pythonhosted.org/packages/8c/9d/8259efa557552da370c126e2251a5f23de96b704c18298c8a8120b557d0a/zeus_apple_silicon-1.0.4-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:5f86c2fc6a5d94def678d3fa6b9733d1121b21410ccbe4d6e2eae84399213155", size = 57255, upload-time = "2025-04-25T05:56:53.718Z" },
-    { url = "https://files.pythonhosted.org/packages/71/db/110b4d9c40f489ded7f71b4bf403e019e6709645fa806ee1ed7662803456/zeus_apple_silicon-1.0.4-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:66181452bdcf959fc08ebae4420093af73adb070ae2dd01dcea675cb6a98ed06", size = 57131, upload-time = "2025-04-25T05:56:55.228Z" },
+    { url = "https://files.pythonhosted.org/packages/4a/cd/69179ff6d638103440457cbe1c8c0b30d0a22a6bb6f2c043a42995fb99e4/zeus_apple_silicon-1.1.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:fca4ff0211b1440841fa8454ea6effedc55c83a17be770ad92bb39da961a2214", size = 62752, upload-time = "2026-03-29T05:30:38.966Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/50/dae39d71cdfed918eea04596ca582f3a8428bb8e44d76e88020d02f04b75/zeus_apple_silicon-1.1.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:c862421e3477344260fad80276cb6b8f6ed7189b5472ef3fca9a54cd5a780aa7", size = 61615, upload-time = "2026-03-29T05:30:40.228Z" },
+    { url = "https://files.pythonhosted.org/packages/c8/0c/e162be99be598d9be1ee48732a95475a42473b311c4809fc01dcc13a68c7/zeus_apple_silicon-1.1.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:410ecf3f594fc94202ad778d274131a24a403553c9b56c7907344edc9107ec03", size = 61526, upload-time = "2026-03-29T05:30:41.568Z" },
 ]
