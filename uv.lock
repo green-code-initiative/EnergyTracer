@@ -250,7 +250,7 @@ wheels = [
 
 [[package]]
 name = "codecarbon"
-version = "3.2.3"
+version = "3.2.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "arrow" },
@@ -261,6 +261,7 @@ dependencies = [
     { name = "prometheus-client" },
     { name = "psutil" },
     { name = "py-cpuinfo" },
+    { name = "pycountry" },
     { name = "pydantic" },
     { name = "questionary" },
     { name = "rapidfuzz" },
@@ -268,9 +269,9 @@ dependencies = [
     { name = "rich" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ab/e6/19d23f0711dca57d2307fbb3152452c51dd77c832ac0faca24b45f2ce66e/codecarbon-3.2.3.tar.gz", hash = "sha256:6acad52c39091a94b2b6312dc9ea7bc78953c2dcb69dfb7375ee21d63afcfdb5", size = 387624, upload-time = "2026-02-22T12:39:07.515Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b5/40/76b82b95be5432600305a60b0d8e37c8f393bcc70ecda90f9e58017fd89b/codecarbon-3.2.6.tar.gz", hash = "sha256:44643ddb571fcf5de36c1a35e7fd9f0cc8bd2bb124cb97bdbd2dd6f07ea6bfc9", size = 419178, upload-time = "2026-03-30T12:52:38.19Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/34/da/8c693675547eee4b04e46f19cfc764294d13777aa1bea17d1ffe7a2edcf6/codecarbon-3.2.3-py3-none-any.whl", hash = "sha256:2adade410f29e83929313cf8478de54b5d9a2deea1cc7b1eb9f5567975f020c2", size = 365289, upload-time = "2026-02-22T12:39:05.417Z" },
+    { url = "https://files.pythonhosted.org/packages/f8/a3/7fa0c02b2efbd6e4ffac1d264d3bdc5eee94405e791bc22a377c31d173e9/codecarbon-3.2.6-py3-none-any.whl", hash = "sha256:7ab6a5b7983af6767948d0c423a111c6bdfb9d5a8df71fc848e9839a4da62ef3", size = 380789, upload-time = "2026-03-30T12:52:36.297Z" },
 ]
 
 [[package]]
@@ -1198,6 +1199,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/37/a8/d832f7293ebb21690860d2e01d8115e5ff6f2ae8bbdc953f0eb0fa4bd2c7/py-cpuinfo-9.0.0.tar.gz", hash = "sha256:3cdbbf3fac90dc6f118bfd64384f309edeadd902d7c8fb17f02ffa1fc3f49690", size = 104716, upload-time = "2022-10-25T20:38:06.303Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e0/a9/023730ba63db1e494a271cb018dcd361bd2c917ba7004c3e49d5daf795a2/py_cpuinfo-9.0.0-py3-none-any.whl", hash = "sha256:859625bc251f64e21f077d099d4162689c762b5d6a4c3c97553d56241c9674d5", size = 22335, upload-time = "2022-10-25T20:38:27.636Z" },
+]
+
+[[package]]
+name = "pycountry"
+version = "26.2.16"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/de/1d/061b9e7a48b85cfd69f33c33d2ef784a531c359399ad764243399673c8f5/pycountry-26.2.16.tar.gz", hash = "sha256:5b6027d453fcd6060112b951dd010f01f168b51b4bf8a1f1fc8c95c8d94a0801", size = 7711342, upload-time = "2026-02-17T03:42:52.367Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9c/42/7703bd45b62fecd44cd7d3495423097e2f7d28bc2e99e7c1af68892ab157/pycountry-26.2.16-py3-none-any.whl", hash = "sha256:115c4baf7cceaa30f59a4694d79483c9167dbce7a9de4d3d571c5f3ea77c305a", size = 8044600, upload-time = "2026-02-17T03:42:49.777Z" },
 ]
 
 [[package]]
