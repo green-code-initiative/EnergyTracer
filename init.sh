@@ -4,8 +4,8 @@ echo "Initializing project environment, using uv..."
 
 uv sync
 
-# Freeze src/python files so local modifications are ignored by Git.
-git update-index --skip-worktree src/python/file_with_code_smell.py src/python/file_without_code_smell.py 2>/dev/null
+# Freeze files so local modifications are ignored by Git.
+git update-index --skip-worktree src/examples/Java/CodeWithSmell.java src/examples/Java/CodeWithoutSmell.java src/python/code_with_smell.py src/python/code_without_smell.py 2>/dev/null
 
 uv run pre-commit install
 

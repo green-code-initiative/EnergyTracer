@@ -7,15 +7,49 @@ from src.main import cli, run_profiling
 
 @pytest.fixture
 def src_file_1(tmp_path):
-    file = tmp_path / "with_smell.py"
-    file.write_text("x = 10 ** 2")
+    file = tmp_path / "WithSmell.java"
+    file.write_text(
+        """public class WithSmell {
+    private static int timeout = 10;
+
+    public static void main(String[] args) {
+        compute();
+    }
+
+    private static long compute() {
+        long total = 0;
+        for (int i = 0; i < 1_000_000; i++) {
+            total += timeout * i;
+        }
+        return total;
+    }
+}
+"""
+    )
     return str(file)
 
 
 @pytest.fixture
 def src_file_2(tmp_path):
-    file = tmp_path / "without_smell.py"
-    file.write_text("x = 10 * 10")
+    file = tmp_path / "WithoutSmell.java"
+    file.write_text(
+        """public class WithoutSmell {
+    private static final int TIMEOUT = 10;
+
+    public static void main(String[] args) {
+        compute();
+    }
+
+    private static long compute() {
+        long total = 0;
+        for (int i = 0; i < 1_000_000; i++) {
+            total += TIMEOUT * i;
+        }
+        return total;
+    }
+}
+"""
+    )
     return str(file)
 
 
@@ -33,6 +67,13 @@ def mock_profiler_cls():
     return mock_cls, mock_profiler
 
 
+@pytest.fixture
+def mock_runner():
+    runner = MagicMock()
+    runner.language = "java"
+    return runner
+
+
 @pytest.mark.unit
 @pytest.mark.parametrize("n_iter", [1, 2, 5, 10])
 @pytest.mark.parametrize("verbose", [False, True])
@@ -40,14 +81,30 @@ def test_run_profiling(src_file_1, mock_profiler_cls, n_iter, verbose):
 
     # Mock profiler class
     mock_cls, mock_profiler = mock_profiler_cls
+    runner = MagicMock()
+    runner.language = "java"
+    runner.run_prepared.side_effect = lambda: None
+
+    def measure_once(label, func):
+        func()
+
+    mock_profiler.measure_once.side_effect = measure_once
 
     history = run_profiling(
-        mock_cls, src_file_1, "test label", n_iter=n_iter, verbose=verbose
+        mock_cls,
+        src_file_1,
+        "test label",
+        n_iter=n_iter,
+        runner=runner,
+        verbose=verbose,
     )
 
     mock_cls.assert_called_once_with(verbose=verbose)
+    runner.prepare.assert_called_once()
     assert mock_profiler.measure_once.call_count == n_iter
+    assert runner.run_prepared.call_count == n_iter
     mock_profiler.finalize.assert_called_once()
+    runner.cleanup.assert_called_once()
     assert history == mock_profiler.history
 
 
@@ -59,8 +116,11 @@ def test_run_profiling_with_keyboard_interrupt(
 ):
 
     mock_cls, mock_profiler = mock_profiler_cls
+    runner = MagicMock()
+    runner.language = "java"
 
     def side_effect(label, func):
+        func()
         if label == "iter_1":
             raise KeyboardInterrupt()
         return
@@ -68,12 +128,20 @@ def test_run_profiling_with_keyboard_interrupt(
     mock_profiler.measure_once.side_effect = side_effect
 
     history = run_profiling(
-        mock_cls, src_file_1, "test label", n_iter=n_iter, verbose=verbose
+        mock_cls,
+        src_file_1,
+        "test label",
+        n_iter=n_iter,
+        runner=runner,
+        verbose=verbose,
     )
 
     mock_cls.assert_called_once_with(verbose=verbose)
+    runner.prepare.assert_called_once()
     assert mock_profiler.measure_once.call_count == 1 if n_iter < 2 else 2
+    assert runner.run_prepared.call_count == 1 if n_iter < 2 else 2
     mock_profiler.finalize.assert_called_once()
+    runner.cleanup.assert_called_once()
     assert history == mock_profiler.history
 
 

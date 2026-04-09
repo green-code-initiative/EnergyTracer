@@ -103,8 +103,8 @@ uv run -m src.main
 | `-h`, `--help` | Show the help message and exit | - |
 | `-p`, `--profiler` | Energy profiler to use | `carbon` |
 | `-n`, `--iter` | Number of iterations for the code under measurement | `1000` |
-| `-f1`, `--src-file-1` | Path to the source file **with** the code smell | `src/python/file_with_code_smell.py` |
-| `-f2`, `--src-file-2` | Path to the source file **without** the code smell | `src/python/file_without_code_smell.py` |
+| `-f1`, `--src-file-1` | Path to the source file **with** the code smell | `src/examples/python/code_with_smell.java` |
+| `-f2`, `--src-file-2` | Path to the source file **without** the code smell | `src/examples/python/code_without_smell.java` |
 | `-o`, `--output-dir` | Directory to save generated plots and CSV files | `output` |
 | `--shuffle` | Randomize execution order of code variants to mitigate temporal effects | off |
 | `-v`, `--verbose` | Enable verbose output during profiling | off |

@@ -7,6 +7,7 @@ from alive_progress import alive_bar
 from .analysis.statistical_analysis import analyse_histories
 from .measure.carbon_energy_profiler import EnergyProfiler as carbonEnergyProfiler
 from .plot.generate_plots import compare_histories
+from .runners.detect import get_language_for, runner_for
 from .utilities import log
 from .utilities.parser import parse_arguments
 from .utilities.save_csv import save_history
@@ -20,33 +21,44 @@ CSV_WITH_SMELL = "history_with_smell.csv"
 CSV_WITHOUT_SMELL = "history_without_smell.csv"
 
 
-def run_profiling(energy_profiler_cls, src_file, label, n_iter, verbose=False):
-    """Run energy profiling on a source file and return the measurement history."""
+def run_profiling(energy_profiler_cls, src_file, label, n_iter, runner, verbose=False):
+    """
+    Run the energy profiling for a single source file and return the measurement history.
+
+    Parameters:
+    -----------
+    energy_profiler_cls: The energy profiler class to use for measurements.
+    src_file: Path to the source code file to profile.
+    label: A label for the source file (e.g., "with smell", "without smell").
+    n_iter: Number of iterations to run the code for profiling.
+    runner: The code runner to use for executing the source code.
+    verbose: Whether to print verbose logs during execution.
+    """
+
     if verbose:
-        log.header(f"Running code {label}")
+        log.header(f"Running {runner.language} code")
 
     code = Path(src_file).read_text()
     monitor = energy_profiler_cls(verbose=verbose)
+
     try:
+        runner.prepare(code)
         with alive_bar(n_iter, disable=not verbose) as bar:
             for i in range(n_iter):
-                # Set __name__ to "__main__" so that `if __name__ == "__main__"` guards work
-                # correctly in the measured code.
-                monitor.measure_once(
-                    f"iter_{i}", lambda: exec(code, {"__name__": "__main__"})
-                )
+                monitor.measure_once(f"iter_{i}", runner.run_prepared)
                 bar()
-        print()  # ensure progress bar is followed by a newline
-
+        print()
     except KeyboardInterrupt:
         if verbose:
-            log.warn(f"Energy profiling for code {label} interrupted by user.")
+            log.warn(f'Energy profiling interrupted for "{label}" code by user.')
+    finally:
+        runner.cleanup()
 
     monitor.finalize()
     return monitor.history
 
 
-def collect_measurements(args, energy_profiler_cls):
+def collect_measurements(args, energy_profiler_cls, runner):
     """Run profiling on both source files (with optional shuffle) and return ordered histories."""
     runs = [
         (args.src_file_1, LABEL_WITH_SMELL),
@@ -73,6 +85,7 @@ def collect_measurements(args, energy_profiler_cls):
         runs[0][0],
         runs[0][1],
         n_iter=args.iter,
+        runner=runner,
         verbose=args.verbose,
     )
 
@@ -81,6 +94,7 @@ def collect_measurements(args, energy_profiler_cls):
         runs[1][0],
         runs[1][1],
         n_iter=args.iter,
+        runner=runner,
         verbose=args.verbose,
     )
 
@@ -129,15 +143,26 @@ def save_cleaned(
 
 
 def main(args, energy_profiler_cls):
+    runner = runner_for(args.src_file_1)
+    language_2 = get_language_for(args.src_file_2)
+
+    if runner.language != language_2:
+        log.error(
+            f"Source file languages do not match: {args.src_file_1} is {runner.language}, "
+            f"but {args.src_file_2} is {language_2}. Please provide source files in the same language."
+        )
+        sys.exit(1)
+
     if args.verbose:
         log.header("EnergyTracer Configuration")
+        log.dim(f"Programming language:          {runner.language}")
         log.dim(f"Energy profiler:               {args.profiler}")
         log.dim(f"Number of iterations:          {args.iter}")
         log.dim(f"Source file with code smell:   {args.src_file_1}")
         log.dim(f"Source file without code smell: {args.src_file_2}")
 
     history_with_smell, history_without_smell = collect_measurements(
-        args, energy_profiler_cls
+        args, energy_profiler_cls, runner
     )
 
     if not history_with_smell and not history_without_smell:

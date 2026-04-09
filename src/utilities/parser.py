@@ -3,8 +3,8 @@ import argparse
 # Default argument values
 DEFAULT_PROFILER = "carbon"
 DEFAULT_ITERATIONS = 1_000
-DEFAULT_SRC_FILE_1 = "src/python/file_with_code_smell.py"
-DEFAULT_SRC_FILE_2 = "src/python/file_without_code_smell.py"
+DEFAULT_SRC_FILE_1 = "src/examples/python/code_with_smell.py"
+DEFAULT_SRC_FILE_2 = "src/examples/python/code_without_smell.py"
 DEFAULT_OUTPUT_DIR = "output"
 
 
@@ -41,14 +41,14 @@ def parse_main_arguments():
         "--src-file-1",
         type=str,
         default=DEFAULT_SRC_FILE_1,
-        help="Path to the source file with the code smell to measure. Default is 'src/python/file_with_code_smell.py'.",
+        help="Path to the source file with the code smell to measure. Default is 'src/examples/python/code_with_smell.py'.",
     )
     parser.add_argument(
         "-f2",
         "--src-file-2",
         type=str,
         default=DEFAULT_SRC_FILE_2,
-        help="Path to the source file without the code smell to measure. Default is 'src/python/file_without_code_smell.py'.",
+        help="Path to the source file without the code smell to measure. Default is 'src/examples/python/code_without_smell.py'.",
     )
     parser.add_argument(
         "-o",

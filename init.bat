@@ -6,7 +6,7 @@ uv sync
 
 REM Freeze src/python files so local modifications are ignored by Git.
 REM These files are meant to be edited locally for experimentation without being committed.
-git update-index --skip-worktree src/python/file_with_code_smell.py src/python/file_without_code_smell.py 2>nul
+git update-index --skip-worktree src/examples/java/CodeWithSmell.java src/examples/java/CodeWithoutSmell.java src/examples/python/code_with_smell.py src/examples/python/code_without_smell.py 2>nul
 
 uv run pre-commit install
 
