@@ -42,7 +42,7 @@ package = true
 [dependency-groups]
 dev = [
     "ruff>=0.15.4",
-    "pytest>=9.0.2",
+    "pytest>=9.0.3",
     "pytest-cov>=7.0.0",
     "pre-commit>=4.5.1",
 ]
