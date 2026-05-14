@@ -19,7 +19,7 @@ requires-python = ">=3.11"
 dependencies = [
     "alive-progress>=3.3.0",
     "codecarbon>=3.2.3",
-    "matplotlib>=3.10.8",
+    "matplotlib>=3.10.9",
     "numpy>=2.4.2",
     "pandas>=3.0.1",
     "scipy>=1.17.1",
