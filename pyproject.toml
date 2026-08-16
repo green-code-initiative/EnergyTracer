@@ -20,7 +20,7 @@ dependencies = [
     "alive-progress>=3.3.0",
     "codecarbon>=3.2.3",
     "matplotlib>=3.10.8",
-    "numpy>=2.4.2",
+    "numpy>=2.4.4",
     "pandas>=3.0.1",
     "scipy>=1.17.1",
     "zeus-apple-silicon>=1.0.4; sys_platform == 'darwin'",
