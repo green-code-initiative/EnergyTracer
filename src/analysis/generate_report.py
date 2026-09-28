@@ -1,8 +1,9 @@
 """
 Report generation module for energy measurement comparisons.
 
-Produces a concise, GitHub PR-ready Markdown report comparing
+Produces a concise, GitHub PR-ready report comparing
 energy consumption between two code variants (with / without a code smell).
+The output format depends on the DocWriter implementation provided.
 """
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from .utils.doc_writer import DocWriter
 from .utils.get_hardware_details import get_hardware_details
 
 if TYPE_CHECKING:
@@ -34,6 +36,7 @@ def _fmt_pvalue(p: float) -> str:
 
 
 def generate_pr_report(
+    doc_writer: DocWriter,
     df_with: pd.DataFrame,
     df_without: pd.DataFrame,
     profiler: str,
@@ -41,14 +44,15 @@ def generate_pr_report(
     verbose: bool = False,
 ) -> str:
     """
-    Generate a concise Markdown report suitable for a GitHub PR description.
+    Generate a concise report suitable for a GitHub PR description.
 
     The report compares energy consumption between code with and without a
     code smell to justify whether removing the smell has a measurable
-    energy impact.
+    energy impact. The output format depends on the DocWriter implementation.
 
     Inputs
     ------
+        doc_writer: A DocWriter implementation controlling the output format.
         df_with: DataFrame of measurements *with* the code smell.
         df_without: DataFrame of measurements *without* the code smell.
         profiler: Profiler name (e.g. "mac-silicon", "carbon").
@@ -57,10 +61,9 @@ def generate_pr_report(
 
     Returns
     -------
-        A Markdown-formatted string.
+        A formatted string produced by the writer.
     """
-    lines: list[str] = []
-    significant_rows: list[str] = []
+    significant_rows: list[list[str]] = []
     verdicts: list[str] = []
 
     for metric in METRICS:
@@ -97,31 +100,41 @@ def generate_pr_report(
         delta_str = f"{delta:+.2f}%" if not np.isnan(delta) else "N/A"
 
         significant_rows.append(
-            f"| `{display_metric}` | {delta_str} | {_fmt_pvalue(p_val)} "
-            f"| {d:+.3f} | {effect} | \u2705 |"
+            [
+                doc_writer.get_inline_code(display_metric),
+                delta_str,
+                _fmt_pvalue(p_val),
+                f"{d:+.3f}",
+                effect,
+                "\u2705",
+            ]
         )
 
         if abs(d) >= 0.2:
             direction = "lower" if mean_without < mean_with else "higher"
             metric_type = "time" if metric == "time_s" else "energy"
             verdicts.append(
-                f"- **`{display_metric}`**: {abs(delta):.1f}% {direction} {metric_type} "
+                f"{doc_writer.get_bold(doc_writer.get_inline_code(display_metric))}: "
+                f"{abs(delta):.1f}% {direction} {metric_type} "
                 f"(Cohen\u2019s d\u2009=\u2009{d:+.3f}, {effect})"
             )
 
     # ── Title & context ───────────────────────────────────
-    lines.append(f"## Energy Report \u2014 `{profiler}` ({data_type})\n")
-    lines.append(
-        f"> {len(df_with)} samples (with smell) vs "
+    doc_writer.add_h2(f"Energy Report \u2014 {doc_writer.get_inline_code(profiler)} ({data_type})")
+    doc_writer.add_quote(
+        f"{len(df_with)} samples (with smell) vs "
         f"{len(df_without)} samples (without smell) \u2014 "
-        f"\u03b1\u2009=\u2009{ALPHA}\n"
+        f"\u03b1\u2009=\u2009{ALPHA}"
     )
 
     # ── Instance info ─────────────────────────────────────
-    lines.append("### Instance Info\n")
-    for key, value in get_hardware_details().items():
-        lines.append(f"* **{key}**: `{value}`")
-    lines.append("")
+    doc_writer.add_h3("Instance Info")
+    doc_writer.add_list(
+        [
+            f"{doc_writer.get_bold(key)}: {doc_writer.get_inline_code(value)}"
+            for key, value in get_hardware_details().items()
+        ]
+    )
 
     # ── Totals ──────────────────────────────────────────────
     energy_cols = ["cpu_mj", "gpu_mj", "dram_mj"]
@@ -142,9 +155,10 @@ def generate_pr_report(
             )
 
     if total_j_with > 0 and total_j_without > 0:
-        lines.append("### Global Consumption\n")
-        lines.append("|  | With smell | Without smell |")
-        lines.append("|---|---:|---:|")
+        doc_writer.add_h3("Global Consumption")
+
+        table_head = [["Metric", "With smell", "Without smell"]]
+        table_rows: list[list[str]] = []
 
         total_s_with = (
             sum(remove_outliers_zscore(df_with["time_s"].dropna().tolist()))
@@ -163,55 +177,54 @@ def generate_pr_report(
         if total_s_with > 0 and total_s_without > 0:
             avg_ms_with = total_s_with / n_with * 1000
             avg_ms_without = total_s_without / n_without * 1000
-            lines.append(
-                f"| **Execution Time** | {avg_ms_with:.2f} ms | {avg_ms_without:.2f} ms |"
+            table_rows.append(
+                [doc_writer.get_bold("Execution Time"), f"{avg_ms_with:.2f} ms", f"{avg_ms_without:.2f} ms"]
             )
 
             avg_w_with = total_j_with / total_s_with
             avg_w_without = total_j_without / total_s_without
-            lines.append(
-                f"| **Average Power** | {avg_w_with:.3f} W | {avg_w_without:.3f} W |"
+            table_rows.append(
+                [doc_writer.get_bold("Average Power"), f"{avg_w_with:.3f} W", f"{avg_w_without:.3f} W"]
             )
 
-        lines.append(
-            f"| **Total Energy** | {total_j_with:.2f} J | {total_j_without:.2f} J |"
+        table_rows.append(
+            [doc_writer.get_bold("Total Energy"), f"{total_j_with:.2f} J", f"{total_j_without:.2f} J"]
         )
 
-    lines.append(
-        "\n> The total energy is the sum of measurements across all iterations, converted to joules (J). If you ran the `./run_experiment.sh` script, this reflects the cumulative energy of all 30 iterations of the process.\n"
+        doc_writer.add_table(table_head, table_rows)
+
+    doc_writer.add_newline()
+    doc_writer.add_quote(
+        "The total energy is the sum of measurements across all iterations, "
+        "converted to joules (J). If you ran the ./run_experiment.sh script, "
+        "this reflects the cumulative energy of all 30 iterations of the process."
     )
 
-    lines.append("### Statistical Analysis\n")
+    doc_writer.add_h3("Statistical Analysis")
 
     # ── Table (only if there are significant results) ─────
     if significant_rows:
-        lines.append(
-            "| Metric | \u0394 mean | p-value | Cohen\u2019s d | Effect | Sig. |"
-        )
-        lines.append("|---|---|---|---|---|---|")
-        lines.extend(significant_rows)
-        lines.append("")
+        stats_head = [["Metric", "\u0394 mean", "p-value", "Cohen\u2019s d", "Effect", "Sig."]]
+        doc_writer.add_table(stats_head, significant_rows)
     else:
-        lines.append(
-            "No statistically significant differences were found between the two variants.\n"
+        doc_writer.add_paragraph(
+            "No statistically significant differences were found between the two variants."
         )
 
     # ── Verdict ───────────────────────────────────────────
-    lines.append("### Verdict\n")
+    doc_writer.add_h3("Verdict")
     if verdicts:
-        lines.append("Removing the code smell leads to measurable energy differences:")
-        lines.append("")
-        lines.extend(verdicts)
-        lines.append("")
-        lines.append(
-            "> \u0394 mean = (mean\\_with \u2212 mean\\_without) / mean\\_with \u00d7 100. "
+        doc_writer.add_paragraph("Removing the code smell leads to measurable energy differences:")
+        doc_writer.add_list(verdicts)
+        doc_writer.add_newline()
+        doc_writer.add_quote(
+            "\u0394 mean = (mean_with \u2212 mean_without) / mean_with \u00d7 100. "
             "Positive \u2192 the smell consumes more energy."
         )
     else:
-        lines.append(
+        doc_writer.add_paragraph(
             "The code smell does not measurably impact energy consumption "
             "under the tested conditions."
         )
 
-    lines.append("")
-    return "\n".join(lines)
+    return doc_writer.build()

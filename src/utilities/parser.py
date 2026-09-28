@@ -82,6 +82,14 @@ def parse_analyzer_arguments():
         description="EnergyTracer Analyzer: A tool to analyze the energy consumption data collected by EnergyTracer."
     )
     parser.add_argument(
+        "-o",
+        "--output-format",
+        type=str,
+        choices=["markdown", "asciidoc"],
+        default="markdown",
+        help="Output format. Default is 'markdown'.",
+    )
+    parser.add_argument(
         "-p",
         "--path",
         type=str,

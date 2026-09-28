@@ -3,7 +3,7 @@
 </p>
 
 
-[![CI](https://github.com/fstormacq/EnergyTracer/actions/workflows/main.yaml/badge.svg)](https://github.com/fstormacq/EnergyTracer/actions/workflows/main.yaml)
+[![CI](https://github.com/green-code-initiative/EnergyTracer/actions/workflows/main.yaml/badge.svg)](https://github.com/green-code-initiative/EnergyTracer/actions/workflows/main.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)]()
 [![Python](https://img.shields.io/badge/Python-3.14-blue?logo=python)](https://python.org)
@@ -57,7 +57,7 @@ uv run ET
 # (Optional) Run with Apple Silicon profiler, 500 iterations
 uv run ET -p mac -n 500 --shuffle -v
 
-# 3. Run the analyzer to generate a Markdown report
+# 3. Run the analyzer to generate a report
 uv run ET-analyzer -v
 
 # (Optional) Run the full experiment script (30 measurement phases with cooldowns)
@@ -243,7 +243,7 @@ All energy metrics are estimated in millijoules (mJ), and CO₂ emissions are es
 
 ## Analyzer (ET-analyzer)
 
-After collecting measurements with `ET`, use the **analyzer** to aggregate all runs, compute statistical tests, and produce a PR-ready Markdown report.
+After collecting measurements with `ET`, use the **analyzer** to aggregate all runs, compute statistical tests, and produce a PR-ready report (Markdown by default).
 
 ```shell
 # Analyze all CSV files under the default output/ directory
@@ -257,7 +257,7 @@ The analyzer:
 
 1. **Discovers** all CSV files under the input directory and classifies them by profiler, data type (raw / cleaned), and variant (with / without smell).
 2. **Merges** per-group CSVs into a single file per group and saves them under `results/`.
-3. **Generates a Markdown report** for each profiler / data-type pair with:
+3. **Generates a report** for each profiler / data-type pair with:
    - A results table showing **only statistically significant** metrics (Welch's t-test, α = 0.05)
    - Cohen's d effect size for each metric
    - A verdict section summarizing the energy impact
@@ -266,10 +266,11 @@ The report is designed to be directly copy-pasted into a GitHub Pull Request des
 
 ### Analyzer Command-Line Options
 
-| Flag | Description | Default |
-|---|---|---|
-| `-p`, `--path` | Input directory containing the CSV output | `output` |
-| `-v`, `--verbose` | Enable verbose output | off |
+| Flag                  | Description                                         | Default    |
+|-----------------------|-----------------------------------------------------|------------|
+| `-o, --output-format` | Output format, possible values : markdown, asciidoc | `markdown` |
+| `-p`, `--path`        | Input directory containing the CSV output           | `output`   |
+| `-v`, `--verbose`     | Enable verbose output                               | off        |
 
 ### Sample Report Output
 
@@ -348,7 +349,7 @@ The script performs the following steps:
 1. **Warm-up phases**: Runs 10 iterations of all profilers to stabilize the system and mitigate initial variability in measurements.
 2. **Measurement phases**: Runs 30 iterations of measurements for each profiler, with 1000 iterations of the code under test in each phase.
 3. **Cooldown periods**: Includes a one-minute cooldown between measurement phases to allow the system to return to baseline conditions and minimize thermal effects.
-4. **Analysis**: Runs `ET-analyzer` to merge all CSV files, compute statistical tests (Welch's t-test, Cohen's d), and generate Markdown reports under `results/`.
+4. **Analysis**: Runs `ET-analyzer` to merge all CSV files, compute statistical tests (Welch's t-test, Cohen's d), and generate reports under `results/` (Markdown file by default).
 
 To further reduce temporal bias, the execution order of code variants is randomized in each iteration using the `--shuffle` flag. The script also provides a terminal progress bar to indicate the current phase and iteration.
 
