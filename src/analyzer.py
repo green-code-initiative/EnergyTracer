@@ -284,19 +284,6 @@ def generate_statistical_reports(
         if verbose:
             log.ok(f"Report saved → {report_file}")
 
-def report_md(df_with_smell, df_without_smell, profiler, data_type, verbose) -> tuple[str, Path]:
-    report_content = generate_pr_report(
-        MarkdownWriter(), df_with_smell, df_without_smell, profiler, data_type, verbose
-    )
-    report_file = ANALYSIS_DIR / data_type / profiler / f"{profiler}_report.md"
-    return report_content, report_file
-
-def report_asciidoc(df_with_smell, df_without_smell, profiler, data_type, verbose) -> tuple[str, Path]:
-    report_content = generate_pr_report(
-        AsciidocWriter(), df_with_smell, df_without_smell, profiler, data_type, verbose
-    )
-    report_file = ANALYSIS_DIR / data_type / profiler / f"{profiler}_report.asciidoc"
-    return report_content, report_file
 
 def report_md(
     df_with_smell, df_without_smell, profiler, data_type, verbose
