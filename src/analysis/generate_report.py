@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from .utils.doc_writer import DocWriter
 from .utils.get_hardware_details import get_hardware_details
 
 if TYPE_CHECKING:
