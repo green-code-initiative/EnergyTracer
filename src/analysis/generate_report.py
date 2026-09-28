@@ -18,6 +18,9 @@ from .utils.get_hardware_details import get_hardware_details
 if TYPE_CHECKING:
     import pandas as pd
 
+    from .utils.doc_writer import DocWriter
+
+
 from .statistical_analysis import (
     ALPHA,
     METRICS,
@@ -120,7 +123,9 @@ def generate_pr_report(
             )
 
     # ── Title & context ───────────────────────────────────
-    doc_writer.add_h2(f"Energy Report \u2014 {doc_writer.get_inline_code(profiler)} ({data_type})")
+    doc_writer.add_h2(
+        f"Energy Report \u2014 {doc_writer.get_inline_code(profiler)} ({data_type})"
+    )
     doc_writer.add_quote(
         f"{len(df_with)} samples (with smell) vs "
         f"{len(df_without)} samples (without smell) \u2014 "
@@ -178,17 +183,29 @@ def generate_pr_report(
             avg_ms_with = total_s_with / n_with * 1000
             avg_ms_without = total_s_without / n_without * 1000
             table_rows.append(
-                [doc_writer.get_bold("Execution Time"), f"{avg_ms_with:.2f} ms", f"{avg_ms_without:.2f} ms"]
+                [
+                    doc_writer.get_bold("Execution Time"),
+                    f"{avg_ms_with:.2f} ms",
+                    f"{avg_ms_without:.2f} ms",
+                ]
             )
 
             avg_w_with = total_j_with / total_s_with
             avg_w_without = total_j_without / total_s_without
             table_rows.append(
-                [doc_writer.get_bold("Average Power"), f"{avg_w_with:.3f} W", f"{avg_w_without:.3f} W"]
+                [
+                    doc_writer.get_bold("Average Power"),
+                    f"{avg_w_with:.3f} W",
+                    f"{avg_w_without:.3f} W",
+                ]
             )
 
         table_rows.append(
-            [doc_writer.get_bold("Total Energy"), f"{total_j_with:.2f} J", f"{total_j_without:.2f} J"]
+            [
+                doc_writer.get_bold("Total Energy"),
+                f"{total_j_with:.2f} J",
+                f"{total_j_without:.2f} J",
+            ]
         )
 
         doc_writer.add_table(table_head, table_rows)
@@ -204,7 +221,9 @@ def generate_pr_report(
 
     # ── Table (only if there are significant results) ─────
     if significant_rows:
-        stats_head = [["Metric", "\u0394 mean", "p-value", "Cohen\u2019s d", "Effect", "Sig."]]
+        stats_head = [
+            ["Metric", "\u0394 mean", "p-value", "Cohen\u2019s d", "Effect", "Sig."]
+        ]
         doc_writer.add_table(stats_head, significant_rows)
     else:
         doc_writer.add_paragraph(
@@ -214,7 +233,9 @@ def generate_pr_report(
     # ── Verdict ───────────────────────────────────────────
     doc_writer.add_h3("Verdict")
     if verdicts:
-        doc_writer.add_paragraph("Removing the code smell leads to measurable energy differences:")
+        doc_writer.add_paragraph(
+            "Removing the code smell leads to measurable energy differences:"
+        )
         doc_writer.add_list(verdicts)
         doc_writer.add_newline()
         doc_writer.add_quote(

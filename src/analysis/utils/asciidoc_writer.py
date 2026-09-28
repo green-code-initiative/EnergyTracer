@@ -2,7 +2,6 @@ from .doc_writer import DocWriter
 
 
 class AsciidocWriter(DocWriter):
-
     def __init__(self):
         super().__init__()
 
