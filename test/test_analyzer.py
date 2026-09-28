@@ -45,26 +45,27 @@ def test_analyzer_cli_with_args(path, verbose):
 
 @pytest.mark.unit
 @pytest.mark.parametrize("path", ["output", "non_existent_dir"])
+@pytest.mark.parametrize("output_format", ["markdown", "markdown"])
 @pytest.mark.parametrize("verbose", [False, True])
-def test_analyzer_main_with_args(path, verbose):
+def test_analyzer_main_with_args(path, output_format, verbose):
     with patch("src.analyzer.process_csv_files") as mock_process:
-        args = MagicMock(path=path, verbose=verbose)
+        args = MagicMock(path=path, output_format=output_format, verbose=verbose)
         result = main(args)
 
-    mock_process.assert_called_once_with(Path(path), verbose=verbose)
+    mock_process.assert_called_once_with(Path(path), output_format, verbose=verbose)
     assert result == 0
 
 
 @pytest.mark.unit
 def test_analyzer_main_keyboard_interrupt_returns_zero():
-    args = MagicMock(path="output", verbose=False)
+    args = MagicMock(path="output", output_format="markdown", verbose=False)
     with patch("src.analyzer.process_csv_files", side_effect=KeyboardInterrupt):
         assert main(args) == 0
 
 
 @pytest.mark.unit
 def test_analyzer_main_unexpected_exception_returns_one():
-    args = MagicMock(path="output", verbose=False)
+    args = MagicMock(path="output", output_format="markdown", verbose=False)
     with patch("src.analyzer.process_csv_files", side_effect=RuntimeError("boom")):
         assert main(args) == 1
 
@@ -235,7 +236,7 @@ def test_generate_statistical_reports_writes_report(merged_paths, tmp_path, verb
             "src.analyzer.generate_pr_report", return_value="# report"
         ) as mock_report,
     ):
-        generate_statistical_reports(merged_paths, verbose=verbose)
+        generate_statistical_reports(merged_paths, "markdown", verbose=verbose)
 
     mock_report.assert_called_once()
     report_file = tmp_path / "cleaned" / "profiler1" / "profiler1_report.md"
@@ -255,7 +256,7 @@ def test_generate_statistical_reports_skips_missing_variant(tmp_path):
         patch("src.analyzer.ANALYSIS_DIR", tmp_path),
         patch("src.analyzer.generate_pr_report") as mock_report,
     ):
-        generate_statistical_reports(incomplete_paths)
+        generate_statistical_reports(incomplete_paths, "markdown")
 
     mock_report.assert_not_called()
 
@@ -284,10 +285,10 @@ def test_process_csv_files_calls_pipeline(tmp_path, verbose):
         ) as mock_merge,
         patch("src.analyzer.generate_statistical_reports") as mock_reports,
     ):
-        process_csv_files(tmp_path, verbose=verbose)
+        process_csv_files(tmp_path, "markdown", verbose=verbose)
 
     mock_classify.assert_called_once()
     mock_merge.assert_called_once_with(
         mock_classify.call_args[0][0], fake_group, verbose=verbose
     )
-    mock_reports.assert_called_once_with(fake_merged, verbose=verbose)
+    mock_reports.assert_called_once_with(fake_merged, "markdown", verbose=verbose)
